@@ -1,0 +1,30 @@
+{
+  "name": "vite-template-solid",
+  "version": "0.0.0",
+  "description": "",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "serve": "vite preview"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "autoprefixer": "^10.4.7",
+    "postcss": "^8.4.14",
+    "tailwindcss": "^3.1.6",
+    "typescript": "^4.7.4",
+    "vite": "^3.0.0",
+    "vite-plugin-solid": "^2.3.0"
+  },
+  "dependencies": {
+    "@flatten-js/core": "^1.3.4",
+    "@hope-ui/solid": "^0.6.2",
+    "@solid-primitives/bounds": "^0.0.100",
+    "@stitches/core": "^1.2.8",
+    "nanoid": "^4.0.0",
+    "roughjs": "^4.5.2",
+    "solid-js": "^1.4.7",
+    "solid-transition-group": "^0.0.10",
+    "z3-solver": "^4.10.1"
+  }
+}
