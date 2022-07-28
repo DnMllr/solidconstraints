@@ -101,55 +101,55 @@ const computeMouseMoveAction = (
   switch (currentAction.kind) {
     case ActionKind.None:
     case ActionKind.Interacting:
-    case ActionKind.PlacingVerticalLine:
-    case ActionKind.PlacingHorizontalLine:
-    case ActionKind.HoveringVerticalLine:
+    case ActionKind.PlacingLine:
+    case ActionKind.HoveringLine:
     case ActionKind.PlacingIntersection:
     case ActionKind.CreateIntersection:
-    case ActionKind.CreateHorizontalLine:
-    case ActionKind.CreateVerticalLine:
-    case ActionKind.PlacingIntersectionAlongVerticalLine:
+    case ActionKind.CreateLine:
+    case ActionKind.PlacingIntersectionAlongLine:
     case ActionKind.PlacingIntersectionAtIntersection:
-    case ActionKind.PlacingIntersectionAlongHorizontalLine:
-    case ActionKind.HoveringIntersection:
-    case ActionKind.HoveringHorizontalLine:
-    case ActionKind.HoveringVerticalLine: {
+    case ActionKind.HoveringIntersection: {
       return computeEnterAction(currentAction, scene, controls, { x, y });
     }
 
-    case ActionKind.TouchingVerticalLine: {
+    case ActionKind.TouchingLine: {
       return {
-        kind: ActionKind.DraggingVerticalLine,
+        kind: ActionKind.DraggingLine,
         dragged: {
           ...currentAction.hovered,
         },
         x,
-      };
-    }
-
-    case ActionKind.DraggingVerticalLine: {
-      return { ...currentAction, x };
-    }
-
-    case ActionKind.TouchingHorizontalLine: {
-      return {
-        kind: ActionKind.DraggingHorizontalLine,
-        dragged: {
-          ...currentAction.hovered,
-        },
         y,
       };
     }
 
-    case ActionKind.DraggingHorizontalLine: {
-      return { ...currentAction, y };
+    case ActionKind.DraggingLine: {
+      return { ...currentAction, x, y };
+    }
+
+    case ActionKind.TouchingLine: {
+      return {
+        kind: ActionKind.DraggingLine,
+        dragged: {
+          ...currentAction.hovered,
+        },
+        x,
+        y,
+      };
+    }
+
+    case ActionKind.DraggingLine: {
+      return { ...currentAction, x, y };
     }
 
     case ActionKind.TouchingIntersection: {
+      const point = scene.points()[currentAction.hovered.point];
+
       return {
         kind: ActionKind.DraggingIntersection,
         dragged: {
           ...currentAction.hovered,
+          lines: [point.x, point.y],
         },
         x,
         y,
@@ -160,37 +160,20 @@ const computeMouseMoveAction = (
       return { ...currentAction, x, y };
     }
 
-    case ActionKind.HoveringHorizontalLineWhileSelecting:
-    case ActionKind.HoveringVerticalLineWhileSelecting:
+    case ActionKind.HoveringLineWhileSelecting:
     case ActionKind.HoveringIntersectionWhileSelecting:
     case ActionKind.Selecting: {
       const hit = highestPriorityElement(scene.hit(x, y));
       if (hit != null) {
         switch (hit.kind) {
           case Kind.Line: {
-            switch (hit.direction) {
-              case Direction.Vertical:
-                return {
-                  ...currentAction,
-                  kind: ActionKind.HoveringVerticalLineWhileSelecting,
-                  hovered: {
-                    lines: {
-                      vertical: [hit.id],
-                    },
-                  },
-                };
-
-              case Direction.Horizontal:
-                return {
-                  ...currentAction,
-                  kind: ActionKind.HoveringHorizontalLineWhileSelecting,
-                  hovered: {
-                    lines: {
-                      horizontal: [hit.id],
-                    },
-                  },
-                };
-            }
+            return {
+              ...currentAction,
+              kind: ActionKind.HoveringLineWhileSelecting,
+              hovered: {
+                line: hit.id,
+              },
+            };
           }
 
           case Kind.Point: {
@@ -198,7 +181,7 @@ const computeMouseMoveAction = (
               ...currentAction,
               kind: ActionKind.HoveringIntersectionWhileSelecting,
               hovered: {
-                points: [hit.id],
+                point: hit.id,
               },
             };
           }
@@ -219,17 +202,10 @@ const computeMouseMoveAction = (
 
 const computeMouseDownAction = (currentAction: Action): Action => {
   switch (currentAction.kind) {
-    case ActionKind.HoveringHorizontalLine: {
+    case ActionKind.HoveringLine: {
       return {
         ...currentAction,
-        kind: ActionKind.TouchingHorizontalLine,
-      };
-    }
-
-    case ActionKind.HoveringVerticalLine: {
-      return {
-        ...currentAction,
-        kind: ActionKind.TouchingVerticalLine,
+        kind: ActionKind.TouchingLine,
       };
     }
 
@@ -249,29 +225,12 @@ const computeMouseUpAction = (
   { x, y }: Position
 ): Action => {
   switch (currentAction.kind) {
-    case ActionKind.TouchingVerticalLine: {
+    case ActionKind.TouchingLine: {
       return {
         ...currentAction,
-        kind: ActionKind.HoveringVerticalLineWhileSelecting,
+        kind: ActionKind.HoveringLineWhileSelecting,
         selected: {
-          lines: {
-            vertical: currentAction.hovered.lines.vertical,
-            horizontal: [],
-          },
-          points: [],
-        },
-      };
-    }
-
-    case ActionKind.TouchingHorizontalLine: {
-      return {
-        ...currentAction,
-        kind: ActionKind.HoveringHorizontalLineWhileSelecting,
-        selected: {
-          lines: {
-            horizontal: currentAction.hovered.lines.horizontal,
-            vertical: [],
-          },
+          lines: [currentAction.hovered.line],
           points: [],
         },
       };
@@ -282,26 +241,18 @@ const computeMouseUpAction = (
         ...currentAction,
         kind: ActionKind.HoveringIntersectionWhileSelecting,
         selected: {
-          lines: {
-            horizontal: [],
-            vertical: [],
-          },
-          points: currentAction.hovered.points,
+          lines: [],
+          points: [currentAction.hovered.point],
         },
       };
     }
 
-    case ActionKind.PlacingHorizontalLine: {
+    case ActionKind.PlacingLine: {
       return {
-        kind: ActionKind.CreateHorizontalLine,
-        y,
-      };
-    }
-
-    case ActionKind.PlacingVerticalLine: {
-      return {
-        kind: ActionKind.CreateVerticalLine,
+        ...currentAction,
+        kind: ActionKind.CreateLine,
         x,
+        y,
       };
     }
 
@@ -313,26 +264,11 @@ const computeMouseUpAction = (
       };
     }
 
-    case ActionKind.DraggingHorizontalLine: {
+    case ActionKind.DraggingLine: {
       return {
-        kind: ActionKind.HoveringHorizontalLine,
+        kind: ActionKind.HoveringLine,
         hovered: {
-          lines: {
-            horizontal: currentAction.dragged.lines.horizontal,
-          },
-        },
-        x,
-        y,
-      };
-    }
-
-    case ActionKind.DraggingVerticalLine: {
-      return {
-        kind: ActionKind.HoveringVerticalLine,
-        hovered: {
-          lines: {
-            vertical: currentAction.dragged.lines.vertical,
-          },
+          line: currentAction.dragged.line,
         },
         x,
         y,
@@ -343,43 +279,29 @@ const computeMouseUpAction = (
       return {
         kind: ActionKind.HoveringIntersection,
         hovered: {
-          points: currentAction.dragged.points,
+          ...currentAction.dragged,
         },
         x,
         y,
       };
     }
 
-    case ActionKind.HoveringHorizontalLineWhileSelecting: {
-      const obj = {};
+    case ActionKind.HoveringLineWhileSelecting: {
+      const lineIsSelected = currentAction.selected.lines.includes(
+        currentAction.hovered.line
+      );
 
-      for (let key of currentAction.hovered.lines.horizontal) {
-        if (!obj[key]) {
-          obj[key] = 0;
-        }
-        obj[key]++;
-      }
-
-      for (let key of currentAction.selected.lines.horizontal) {
-        if (!obj[key]) {
-          obj[key] = 0;
-        }
-        obj[key]++;
-      }
+      const lines = lineIsSelected
+        ? currentAction.selected.lines.filter(
+            (id) => id !== currentAction.hovered.line
+          )
+        : [...currentAction.selected.lines, currentAction.hovered.line];
 
       return {
-        kind: ActionKind.HoveringHorizontalLineWhileSelecting,
-        hovered: {
-          ...currentAction.hovered,
-        },
+        ...currentAction,
         selected: {
           ...currentAction.selected,
-          lines: {
-            ...currentAction.selected.lines,
-            horizontal: Object.entries(obj)
-              .filter(([_, v]) => v === 1)
-              .map(([k, _]) => k),
-          },
+          lines,
         },
       };
     }
@@ -426,37 +348,19 @@ const enterInNoneMode = (
             ...currentAction,
             kind: ActionKind.HoveringIntersectionWhileSelecting,
             hovered: {
-              points: [target.id],
+              point: target.id,
             },
           };
         }
 
         case Kind.Line: {
-          switch (target.direction) {
-            case Direction.Horizontal: {
-              return {
-                ...currentAction,
-                kind: ActionKind.HoveringHorizontalLineWhileSelecting,
-                hovered: {
-                  lines: {
-                    horizontal: [target.id],
-                  },
-                },
-              };
-            }
-
-            case Direction.Vertical: {
-              return {
-                ...currentAction,
-                kind: ActionKind.HoveringVerticalLineWhileSelecting,
-                hovered: {
-                  lines: {
-                    vertical: [target.id],
-                  },
-                },
-              };
-            }
-          }
+          return {
+            ...currentAction,
+            kind: ActionKind.HoveringLineWhileSelecting,
+            hovered: {
+              line: target.id,
+            },
+          };
         }
       }
     } else {
@@ -465,7 +369,7 @@ const enterInNoneMode = (
           return {
             kind: ActionKind.HoveringIntersection,
             hovered: {
-              points: [target.id],
+              point: target.id,
             },
             x,
             y,
@@ -473,33 +377,14 @@ const enterInNoneMode = (
         }
 
         case Kind.Line: {
-          switch (target.direction) {
-            case Direction.Horizontal: {
-              return {
-                kind: ActionKind.HoveringHorizontalLine,
-                hovered: {
-                  lines: {
-                    horizontal: [target.id],
-                  },
-                },
-                x,
-                y,
-              };
-            }
-
-            case Direction.Vertical: {
-              return {
-                kind: ActionKind.HoveringVerticalLine,
-                hovered: {
-                  lines: {
-                    vertical: [target.id],
-                  },
-                },
-                x,
-                y,
-              };
-            }
-          }
+          return {
+            kind: ActionKind.HoveringLine,
+            hovered: {
+              line: target.id,
+            },
+            x,
+            y,
+          };
         }
       }
     }
@@ -519,11 +404,9 @@ const enterInHorizontalLineMode = (
     if (target) {
       return {
         ...currentAction,
-        kind: ActionKind.HoveringHorizontalLineWhileSelecting,
+        kind: ActionKind.HoveringLineWhileSelecting,
         hovered: {
-          lines: {
-            horizontal: [target.id],
-          },
+          line: target.id,
         },
       };
     }
@@ -533,11 +416,9 @@ const enterInHorizontalLineMode = (
 
   if (target) {
     return {
-      kind: ActionKind.HoveringHorizontalLine,
+      kind: ActionKind.HoveringLine,
       hovered: {
-        lines: {
-          horizontal: [target.id],
-        },
+        line: target.id,
       },
       x,
       y,
@@ -545,9 +426,10 @@ const enterInHorizontalLineMode = (
   }
 
   return {
+    kind: ActionKind.PlacingLine,
+    direction: Direction.Horizontal,
     x,
     y,
-    kind: ActionKind.PlacingHorizontalLine,
   };
 };
 
@@ -562,11 +444,9 @@ const enterInVerticalLineMode = (
     if (target) {
       return {
         ...currentAction,
-        kind: ActionKind.HoveringVerticalLineWhileSelecting,
+        kind: ActionKind.HoveringLineWhileSelecting,
         hovered: {
-          lines: {
-            vertical: [target.id],
-          },
+          line: target.id,
         },
       };
     }
@@ -576,11 +456,9 @@ const enterInVerticalLineMode = (
 
   if (target) {
     return {
-      kind: ActionKind.HoveringVerticalLine,
+      kind: ActionKind.HoveringLine,
       hovered: {
-        lines: {
-          vertical: [target.id],
-        },
+        line: target.id,
       },
       x,
       y,
@@ -588,9 +466,10 @@ const enterInVerticalLineMode = (
   }
 
   return {
+    direction: Direction.Vertical,
+    kind: ActionKind.PlacingLine,
     x,
     y,
-    kind: ActionKind.PlacingVerticalLine,
   };
 };
 
@@ -606,7 +485,7 @@ const enterInIntersectionMode = (
         ...currentAction,
         kind: ActionKind.HoveringIntersectionWhileSelecting,
         hovered: {
-          points: [target.id],
+          point: target.id,
         },
       };
     }
@@ -620,48 +499,30 @@ const enterInIntersectionMode = (
       return {
         kind: ActionKind.HoveringIntersection,
         hovered: {
-          points: [target.id],
+          point: target.id,
         },
         x,
         y,
       };
     } else {
-      const [h, v] = target;
-      if (!v) {
+      if (target.length === 1) {
         return {
+          kind: ActionKind.PlacingIntersectionAlongLine,
+          hovered: {
+            line: target[0].id,
+          },
           x,
           y,
-          hovered: {
-            lines: {
-              horizontal: [h.id],
-            },
-          },
-          kind: ActionKind.PlacingIntersectionAlongHorizontalLine,
-        };
-      } else if (!h) {
-        return {
-          x,
-          y,
-          hovered: {
-            lines: {
-              vertical: [v.id],
-            },
-          },
-          kind: ActionKind.PlacingIntersectionAlongVerticalLine,
-        };
-      } else {
-        return {
-          x,
-          y,
-          hovered: {
-            lines: {
-              horizontal: [h.id],
-              vertical: [v.id],
-            },
-          },
-          kind: ActionKind.PlacingIntersectionAtIntersection,
         };
       }
+      return {
+        kind: ActionKind.PlacingIntersectionAtIntersection,
+        hovered: {
+          lines: target.map((t) => t.id),
+        },
+        x,
+        y,
+      };
     }
   }
 
@@ -717,7 +578,7 @@ const highestPriorityElement = (elements: Geometry[]): Geometry | undefined => {
 
 const intersectionHits = (
   elements: Geometry[]
-): GeoPoint | [GeoLine | undefined, GeoLine | undefined] | undefined => {
+): GeoPoint | GeoLine[] | undefined => {
   const fp = firstPoint(elements);
   if (fp != null) {
     return fp;
@@ -730,5 +591,15 @@ const intersectionHits = (
     return undefined;
   }
 
-  return [h, v];
+  const result = [];
+
+  if (v != null) {
+    result.push(v);
+  }
+
+  if (h != null) {
+    result.push(h);
+  }
+
+  return result;
 };

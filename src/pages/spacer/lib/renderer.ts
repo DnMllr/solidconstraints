@@ -1,4 +1,4 @@
-import { SceneReader } from "./scene";
+import { Direction, SceneReader } from "./scene";
 import rough from "roughjs";
 import { RoughCanvas } from "roughjs/bin/canvas";
 import { Options } from "roughjs/bin/core";
@@ -28,6 +28,9 @@ interface PointTheme {
 
 const padding = 10;
 const opts: Options = { bowing: 0 };
+const solid: Options = { fillStyle: "solid" };
+const lessRough: Options = { roughness: 0.6 };
+const basePoint: Options = { ...opts, ...solid, ...lessRough };
 const dashed: Options = {
   strokeLineDash: [5, 13],
   strokeLineDashOffset: 10,
@@ -40,7 +43,7 @@ const theme: Theme = {
     rest: {
       ...opts,
       ...dashed,
-      stroke: "lavenderblush",
+      stroke: "gainsboro",
     },
     insert: {
       ...opts,
@@ -66,25 +69,33 @@ const theme: Theme = {
   },
   point: {
     radius: {
-      rest: 3,
-      hovering: 4,
-      dragging: 3,
-      insert: 5,
+      rest: 7,
+      hovering: 10,
+      dragging: 5,
+      insert: 10,
       selected: 4,
       hoveringSelected: 5,
     },
     options: {
       rest: {
-        stroke: "lightgrey",
+        ...basePoint,
+        stroke: "grey",
+        fill: "grey",
       },
       insert: {
-        stroke: "linen",
+        ...basePoint,
+        stroke: "black",
+        fill: "aliceblue",
       },
       hovering: {
-        stroke: "grey",
+        ...basePoint,
+        stroke: "black",
+        fill: "grey",
       },
       dragging: {
+        ...basePoint,
         stroke: "black",
+        fill: "lightblue",
       },
       selected: {
         stroke: "violet",
@@ -328,8 +339,7 @@ const renderAction = (
       return;
     }
 
-    case ActionKind.CreateHorizontalLine:
-    case ActionKind.CreateVerticalLine:
+    case ActionKind.CreateLine:
     case ActionKind.CreateIntersection:
     case ActionKind.Interacting: {
       finishScene(rc, scene, width, height);
@@ -338,12 +348,9 @@ const renderAction = (
 
     case ActionKind.Selecting: {
       const drawn = new Set<string>();
-      const allLines = action.selected.lines.vertical.concat(
-        action.selected.lines.horizontal
-      );
 
       const lines = scene.lines();
-      for (const id of allLines) {
+      for (const id of action.selected.lines) {
         drawn.add(id);
         draw.lines.selected(rc, lines[id].geom, width, height);
       }
@@ -358,76 +365,52 @@ const renderAction = (
       return;
     }
 
-    case ActionKind.PlacingVerticalLine: {
-      draw.lines.insert.vertical(rc, action, height);
+    case ActionKind.PlacingLine: {
+      switch (action.direction) {
+        case Direction.Horizontal: {
+          draw.lines.insert.horizontal(rc, action, width);
+          return;
+        }
+
+        case Direction.Vertical: {
+          draw.lines.insert.vertical(rc, action, height);
+          break;
+        }
+      }
+
       finishScene(rc, scene, width, height);
       return;
     }
 
-    case ActionKind.PlacingHorizontalLine: {
-      draw.lines.insert.horizontal(rc, action, width);
-      finishScene(rc, scene, width, height);
-      return;
-    }
-
-    case ActionKind.TouchingVerticalLine:
-    case ActionKind.HoveringVerticalLine: {
+    case ActionKind.TouchingLine:
+    case ActionKind.HoveringLine: {
       const drawn = new Set<string>();
       const lines = scene.lines();
 
-      for (const id of action.hovered.lines.vertical) {
-        drawn.add(id);
-        draw.lines.hovering(rc, lines[id].geom, width, height);
-      }
+      drawn.add(action.hovered.line);
+      draw.lines.hovering(rc, lines[action.hovered.line].geom, width, height);
 
       finishScene(rc, scene, width, height, drawn);
       return;
     }
 
-    case ActionKind.TouchingHorizontalLine:
-    case ActionKind.HoveringHorizontalLine: {
+    case ActionKind.HoveringLineWhileSelecting: {
       const drawn = new Set<string>();
+
       const lines = scene.lines();
 
-      for (const id of action.hovered.lines.horizontal) {
+      for (const id of action.selected.lines) {
         drawn.add(id);
-        draw.lines.hovering(rc, lines[id].geom, width, height);
-      }
-
-      finishScene(rc, scene, width, height, drawn);
-      return;
-    }
-
-    case ActionKind.HoveringHorizontalLineWhileSelecting:
-    case ActionKind.HoveringVerticalLineWhileSelecting: {
-      const drawn = new Set<string>();
-
-      const allHoveredLineIDs = Object.values(action.hovered.lines).reduce(
-        (m, l) => m.concat(l),
-        []
-      );
-
-      const hovered = new Set<string>(allHoveredLineIDs);
-      const lines = scene.lines();
-
-      for (const ids of Object.values(action.selected.lines)) {
-        for (const id of ids) {
-          drawn.add(id);
-          if (hovered.has(id)) {
-            draw.lines.hoveringSelected(rc, lines[id].geom, width, height);
-          } else {
-            draw.lines.selected(rc, lines[id].geom, width, height);
-          }
+        if (id === action.hovered.line) {
+          draw.lines.hoveringSelected(rc, lines[id].geom, width, height);
+        } else {
+          draw.lines.selected(rc, lines[id].geom, width, height);
         }
       }
 
-      for (const id of allHoveredLineIDs) {
-        if (drawn.has(id)) {
-          continue;
-        }
-
-        drawn.add(id);
-        draw.lines.hovering(rc, lines[id].geom, width, height);
+      if (!drawn.has(action.hovered.line)) {
+        drawn.add(action.hovered.line);
+        draw.lines.hovering(rc, lines[action.hovered.line].geom, width, height);
       }
 
       const points = scene.points();
@@ -440,17 +423,12 @@ const renderAction = (
       return;
     }
 
-    case ActionKind.DraggingHorizontalLine:
-    case ActionKind.DraggingVerticalLine: {
+    case ActionKind.DraggingLine: {
       const drawn = new Set<string>();
       const lines = scene.lines();
 
-      for (const ids of Object.values(action.dragged.lines)) {
-        for (const id of ids) {
-          drawn.add(id);
-          draw.lines.dragging(rc, lines[id].geom, width, height);
-        }
-      }
+      drawn.add(action.dragged.line);
+      draw.lines.dragging(rc, lines[action.dragged.line].geom, width, height);
 
       finishScene(rc, scene, width, height, drawn);
       return;
@@ -468,44 +446,44 @@ const renderAction = (
     case ActionKind.PlacingIntersectionAtIntersection: {
       const drawn = new Set<string>();
       const lines = scene.lines();
-      const v = lines[action.hovered.lines.vertical[0]];
-      const h = lines[action.hovered.lines.horizontal[0]];
 
-      drawn.add(v.id);
-      draw.lines.hovering(rc, v.geom, width, height);
+      const axis = {};
 
-      drawn.add(h.id);
-      draw.lines.hovering(rc, h.geom, width, height);
+      for (const id of action.hovered.lines) {
+        const line = lines[id];
+        axis[line.direction] = line;
+        drawn.add(line.id);
+        draw.lines.hovering(rc, line.geom, width, height);
+      }
 
-      draw.point.insert(rc, { x: v.geom.start.x, y: h.geom.start.y });
-
-      finishScene(rc, scene, width, height, drawn);
-      return;
-    }
-
-    case ActionKind.PlacingIntersectionAlongVerticalLine: {
-      const drawn = new Set<string>();
-      const lines = scene.lines();
-      const v = lines[action.hovered.lines.vertical[0]];
-
-      drawn.add(v.id);
-      draw.lines.hovering(rc, v.geom, width, height);
-
-      draw.point.insert(rc, { x: v.geom.start.x, y: action.y });
+      draw.point.insert(rc, {
+        x: axis[Direction.Vertical].geom.start.x,
+        y: axis[Direction.Horizontal].geom.start.y,
+      });
 
       finishScene(rc, scene, width, height, drawn);
       return;
     }
 
-    case ActionKind.PlacingIntersectionAlongHorizontalLine: {
+    case ActionKind.PlacingIntersectionAlongLine: {
       const drawn = new Set<string>();
       const lines = scene.lines();
-      const h = lines[action.hovered.lines.horizontal[0]];
+      const line = lines[action.hovered.line];
 
-      drawn.add(h.id);
-      draw.lines.hovering(rc, h.geom, width, height);
+      drawn.add(line.id);
+      draw.lines.hovering(rc, line.geom, width, height);
 
-      draw.point.insert(rc, { x: action.x, y: h.geom.start.y });
+      switch (line.direction) {
+        case Direction.Vertical: {
+          draw.point.insert(rc, { x: line.geom.start.x, y: action.y });
+          break;
+        }
+
+        case Direction.Horizontal: {
+          draw.point.insert(rc, { x: action.x, y: line.geom.start.y });
+          break;
+        }
+      }
 
       finishScene(rc, scene, width, height, drawn);
       return;
@@ -514,11 +492,8 @@ const renderAction = (
     case ActionKind.TouchingIntersection:
     case ActionKind.HoveringIntersection: {
       const drawn = new Set<string>();
-      const points = scene.points();
-      for (const id of action.hovered.points) {
-        drawn.add(id);
-        draw.point.hovering(rc, points[id].geom);
-      }
+      drawn.add(action.hovered.point);
+      draw.point.hovering(rc, scene.points()[action.hovered.point].geom);
 
       finishScene(rc, scene, width, height, drawn);
       return;
@@ -526,33 +501,26 @@ const renderAction = (
 
     case ActionKind.HoveringIntersectionWhileSelecting: {
       const drawn = new Set<string>();
-      const hovered = new Set<string>(action.hovered.points);
       const points = scene.points();
       const lines = scene.lines();
 
-      for (const ids of Object.values(action.selected.lines)) {
-        for (const id of ids) {
-          drawn.add(id);
-          draw.lines.selected(rc, lines[id].geom, width, height);
-        }
+      for (const id of action.selected.lines) {
+        drawn.add(id);
+        draw.lines.selected(rc, lines[id].geom, width, height);
       }
 
       for (const id of action.selected.points) {
         drawn.add(id);
-        if (hovered.has(id)) {
+        if (id === action.hovered.point) {
           draw.point.hoveringSelected(rc, points[id].geom);
         } else {
           draw.point.selected(rc, points[id].geom);
         }
       }
 
-      for (const id of action.hovered.points) {
-        if (drawn.has(id)) {
-          continue;
-        }
-
-        drawn.add(id);
-        draw.point.hovering(rc, points[id].geom);
+      if (!drawn.has(action.hovered.point)) {
+        drawn.add(action.hovered.point);
+        draw.point.hovering(rc, points[action.hovered.point].geom);
       }
 
       finishScene(rc, scene, width, height, drawn);
@@ -562,10 +530,8 @@ const renderAction = (
     case ActionKind.DraggingIntersection: {
       const drawn = new Set<string>();
       const points = scene.points();
-      for (const id of action.dragged.points) {
-        drawn.add(id);
-        draw.point.dragging(rc, points[id].geom);
-      }
+      drawn.add(action.dragged.point);
+      draw.point.dragging(rc, points[action.dragged.point].geom);
 
       finishScene(rc, scene, width, height, drawn);
       return;
