@@ -8,6 +8,7 @@ import { createScene } from "./lib/scene";
 export const Spacer: Component = () => {
   const controls = createControls();
   const scene = createScene();
+
   return (
     <VStack class="w-full h-full" alignItems="flex-start">
       <Controls ctrl={controls} />

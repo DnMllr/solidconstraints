@@ -1,11 +1,17 @@
-import { createEffect, ParentComponent, createSignal, batch } from "solid-js";
+import {
+  createEffect,
+  ParentComponent,
+  createSignal,
+  batch,
+  onCleanup,
+} from "solid-js";
 
 import { useViewportBounds } from "./ViewportStage";
 import { SceneCtl } from "../lib/scene";
 import { render } from "../lib/renderer";
 import { ControlsCtrl } from "../lib/controls";
 import * as Interactions from "../lib/interactor";
-import { Action, ActionKind, lookupActionKind } from "../lib/actions";
+import { Action, ActionKind } from "../lib/actions";
 
 export interface ViewportProps {
   padding?: number;
@@ -22,13 +28,25 @@ export const Viewport: ParentComponent<ViewportProps> = ({
   const bounds = useViewportBounds();
 
   createEffect(() => {
-    const a = action();
-    console.log({ ...a, kind: lookupActionKind(a.kind) });
-    render(scene, a, el(), bounds.width, bounds.height);
+    render(scene, action(), el(), bounds.width, bounds.height);
   });
 
   createEffect(() => {
     scene.applyGrid(controls.controls.grid);
+  });
+
+  createEffect(() => {
+    const listener = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        batch(() => {
+          controls.exitMode();
+          setAction((a) => Interactions.onEscape(a, scene, controls.controls));
+        });
+      }
+    };
+
+    document.addEventListener("keyup", listener);
+    onCleanup(() => document.removeEventListener("keyup", listener));
   });
 
   const onMouseDown = (e: MouseEvent) => {
@@ -43,7 +61,9 @@ export const Viewport: ParentComponent<ViewportProps> = ({
   const onMouseUp = (e: MouseEvent) => {
     batch(() => {
       scene.updateWithAction(
-        setAction((a) => Interactions.onMouseUp(a, controls.controls, e)),
+        setAction((a) =>
+          Interactions.onMouseUp(a, scene, controls.controls, e)
+        ),
         controls.controls.grid
       );
     });

@@ -369,7 +369,7 @@ const renderAction = (
       switch (action.direction) {
         case Direction.Horizontal: {
           draw.lines.insert.horizontal(rc, action, width);
-          return;
+          break;
         }
 
         case Direction.Vertical: {

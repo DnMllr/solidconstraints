@@ -52,14 +52,22 @@ const computePosition = (controls: ControlsState, e: MouseEvent): Position => {
   return { x, y };
 };
 
+export const onEscape = (
+  currentAction: Action,
+  scene: SceneReader,
+  controls: ControlsState
+): Action => computeEscapeAction(currentAction, scene, controls);
+
 export const onMouseDown = (currentAction: Action): Action =>
   computeMouseDownAction(currentAction);
 
 export const onMouseUp = (
   currentAction: Action,
+  scene: SceneReader,
   controls: ControlsState,
   e: MouseEvent
-): Action => computeMouseUpAction(currentAction, computePosition(controls, e));
+): Action =>
+  computeMouseUpAction(currentAction, scene, computePosition(controls, e));
 
 export const onMouseEnter = (
   currentAction: Action,
@@ -91,6 +99,25 @@ export const onMouseMove = (
     controls,
     computePosition(controls, e)
   );
+
+const computeEscapeAction = (
+  currentAction: Action,
+  scene: SceneReader,
+  controls: ControlsState
+): Action => {
+  if ("x" in currentAction && "y" in currentAction) {
+    return computeEnterAction(
+      { kind: ActionKind.None },
+      scene,
+      {
+        ...controls,
+        mode: Mode.None,
+      },
+      currentAction
+    );
+  }
+  return { kind: ActionKind.None };
+};
 
 const computeMouseMoveAction = (
   currentAction: Action,
@@ -222,6 +249,7 @@ const computeMouseDownAction = (currentAction: Action): Action => {
 
 const computeMouseUpAction = (
   currentAction: Action,
+  scene: SceneReader,
   { x, y }: Position
 ): Action => {
   switch (currentAction.kind) {
@@ -256,12 +284,22 @@ const computeMouseUpAction = (
       };
     }
 
+    case ActionKind.PlacingIntersectionAlongLine: {
+      return createCreateIntersectionAction(scene, { x, y }, [
+        currentAction.hovered.line,
+      ]);
+    }
+
+    case ActionKind.PlacingIntersectionAtIntersection: {
+      return createCreateIntersectionAction(
+        scene,
+        { x, y },
+        currentAction.hovered.lines
+      );
+    }
+
     case ActionKind.PlacingIntersection: {
-      return {
-        kind: ActionKind.CreateIntersection,
-        x,
-        y,
-      };
+      return createCreateIntersectionAction(scene, { x, y }, []);
     }
 
     case ActionKind.DraggingLine: {
@@ -296,6 +334,17 @@ const computeMouseUpAction = (
             (id) => id !== currentAction.hovered.line
           )
         : [...currentAction.selected.lines, currentAction.hovered.line];
+
+      if (lines.length === 0 && currentAction.selected.points.length === 0) {
+        return {
+          kind: ActionKind.HoveringLine,
+          hovered: {
+            line: currentAction.hovered.line,
+          },
+          x,
+          y,
+        };
+      }
 
       return {
         ...currentAction,
@@ -602,4 +651,30 @@ const intersectionHits = (
   }
 
   return result;
+};
+
+const createCreateIntersectionAction = (
+  scene: SceneReader,
+  { x, y }: Position,
+  lineIDs: string[]
+): Action => {
+  const action: Action = { kind: ActionKind.CreateIntersection, x, y };
+  const lines = scene.lines();
+
+  for (const lineID of lineIDs) {
+    const line = lines[lineID];
+    switch (line.direction) {
+      case Direction.Horizontal: {
+        action.y = line.v;
+        break;
+      }
+
+      case Direction.Vertical: {
+        action.x = line.v;
+        break;
+      }
+    }
+  }
+
+  return action;
 };
