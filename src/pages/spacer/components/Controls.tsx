@@ -99,14 +99,6 @@ const GridControls: Component<ControlsProps> = ({ ctrl }) => {
 
   return (
     <HStack spacing="$2" class="flex-fit">
-      <IconButton
-        minWidth="40px"
-        _focus={{ boxShadow: "none" }}
-        onClick={() => (ctrl.controls.grid != null ? ctrl.unsetGrid() : set())}
-        icon={<Grid />}
-        variant={ctrl.controls.grid != null ? "solid" : "ghost"}
-        aria-label="set a grid for the viewport"
-      />
       <Show when={ctrl.controls.grid != null}>
         <InputGroup>
           <InputLeftElement pointerEvents="none">X</InputLeftElement>
@@ -131,6 +123,14 @@ const GridControls: Component<ControlsProps> = ({ ctrl }) => {
           />
         </InputGroup>
       </Show>
+      <IconButton
+        minWidth="40px"
+        _focus={{ boxShadow: "none" }}
+        onClick={() => (ctrl.controls.grid != null ? ctrl.unsetGrid() : set())}
+        icon={<Grid />}
+        variant={ctrl.controls.grid != null ? "solid" : "ghost"}
+        aria-label="set a grid for the viewport"
+      />
     </HStack>
   );
 };

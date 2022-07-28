@@ -7,14 +7,22 @@ import {
   VStack,
   TabPanel,
   Box,
-  Heading,
+  Accordion,
+  AccordionItem,
+  AccordionButton,
+  Text,
+  AccordionIcon,
+  AccordionPanel,
+  Badge,
 } from "@hope-ui/solid";
 import { Component, createMemo, For, Show } from "solid-js";
+import { InteractionCtrl } from "../lib/interactor";
 
 import { GeoLine, SceneCtl } from "../lib/scene";
 
 export interface InspectorProps {
   scene: SceneCtl;
+  interactor: InteractionCtrl;
 }
 
 interface Elements {
@@ -22,7 +30,7 @@ interface Elements {
   yLines: GeoLine[];
 }
 
-export const Inspector: Component<InspectorProps> = ({ scene }) => {
+export const Inspector: Component<InspectorProps> = ({ scene, interactor }) => {
   const elements = createMemo<Elements>(() => {
     const grid = scene.grid();
     const lines = scene.lines();
@@ -41,55 +49,44 @@ export const Inspector: Component<InspectorProps> = ({ scene }) => {
         </TabList>
         <TabPanel>Actions...</TabPanel>
         <TabPanel>
-          <VStack
-            spacing="23px"
-            class="h-full w-full"
-            alignItems="stretch"
-            justifyContent="flex-start"
-          >
+          <Accordion allowMultiple>
             <Show when={elements().xLines.length > 0}>
-              <Box>
-                <Heading>Horizontal Lines</Heading>
-                <Divider orientation="horizontal" variant="dashed" />
-                <VStack
-                  spacing="7px"
-                  class="h-full w-full"
-                  alignItems="stretch"
-                  justifyContent="flex-start"
-                >
-                  <For each={elements().xLines}>
-                    {(item) => (
-                      <Box>
-                        <Heading>{item.id}</Heading>
-                        {item.v}
-                      </Box>
-                    )}
-                  </For>
-                </VStack>
-              </Box>
+              <AccordionItem>
+                <h2>
+                  <AccordionButton _focus={{ boxShadow: "none" }}>
+                    <Text class="flex-1" fontWeight="$light">
+                      Horizontal Lines
+                    </Text>
+                    <AccordionIcon />
+                  </AccordionButton>
+                </h2>
+                <AccordionPanel>
+                  <VStack alignItems="stretch">
+                    <For each={elements().xLines}>
+                      {(line) => (
+                        <Box>
+                          <VStack alignItems="stretch">
+                            <HStack justifyContent="space-between">
+                              <Badge
+                                onMouseEnter={() =>
+                                  interactor.ui.hoverElement(line.id)
+                                }
+                                onMouseLeave={() => interactor.ui.clear()}
+                              >
+                                {line.id}
+                              </Badge>
+                              <Text fontWeight="$light">y: {line.v}</Text>
+                            </HStack>
+                            <Divider />
+                          </VStack>
+                        </Box>
+                      )}
+                    </For>
+                  </VStack>
+                </AccordionPanel>
+              </AccordionItem>
             </Show>
-            <Show when={elements().yLines.length > 0}>
-              <Box>
-                <Heading>Vertical Lines</Heading>
-                <Divider orientation="horizontal" variant="dashed" />
-                <VStack
-                  spacing="7px"
-                  class="h-full w-full"
-                  alignItems="stretch"
-                  justifyContent="flex-start"
-                >
-                  <For each={elements().yLines}>
-                    {(item) => (
-                      <Box>
-                        <Heading>{item.id}</Heading>
-                        {item.v}
-                      </Box>
-                    )}
-                  </For>
-                </VStack>
-              </Box>
-            </Show>
-          </VStack>
+          </Accordion>
         </TabPanel>
       </Tabs>
     </HStack>

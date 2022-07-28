@@ -18,6 +18,10 @@ export enum ActionKind {
   TouchingIntersection,
   HoveringIntersectionWhileSelecting,
   DraggingIntersection,
+  DraggingSelection,
+
+  UIHoveringElement,
+  UIHoveringElementWhileSelecting,
 }
 
 interface HasActionKind<T extends ActionKind> {
@@ -34,6 +38,10 @@ interface HasHovered<T> {
 
 interface HasDragged<T> {
   dragged: T;
+}
+
+interface HasTarget<T> {
+  target: T;
 }
 
 interface HasDirection {
@@ -143,6 +151,15 @@ interface PlacingIntersectionAtIntersectionAction
     HasHovered<HasLines>,
     HasCoordinates {}
 
+interface UIHoveringElementAction
+  extends HasActionKind<ActionKind.UIHoveringElement>,
+    HasHovered<string> {}
+
+interface UIHoveringElementWhileSelectingAction
+  extends HasActionKind<ActionKind.UIHoveringElementWhileSelecting>,
+    HasHovered<string>,
+    HasSelections {}
+
 export type Action =
   | NonInteractingAction
   | InteractingAction
@@ -160,7 +177,9 @@ export type Action =
   | HoveringIntersectionAction
   | DraggingLineAction
   | DraggingIntersectionAction
-  | CreateIntersectionAction;
+  | CreateIntersectionAction
+  | UIHoveringElementAction
+  | UIHoveringElementWhileSelectingAction;
 
 export const getXPosition = (action: Action): number | undefined => {
   if ("x" in action) {

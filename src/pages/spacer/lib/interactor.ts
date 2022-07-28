@@ -1,39 +1,87 @@
 import Flatten from "@flatten-js/core";
+import { createSignal } from "solid-js";
 import { Action, ActionKind } from "./actions";
-import { ControlsState, Mode } from "./controls";
+import { ControlsCtrl, ControlsState, Mode } from "./controls";
 import {
   Direction,
   GeoLine,
   Geometry,
   GeoPoint,
   Kind,
+  Position,
   SceneReader,
 } from "./scene";
 
-interface Position {
-  x: number;
-  y: number;
-}
+export const createInteractor = (
+  scene: SceneReader,
+  controls: ControlsCtrl
+): InteractionCtrl => {
+  const [action, setAction] = createSignal<Action>({ kind: ActionKind.None });
+
+  return {
+    action,
+    viewport: {
+      onMouseDown(e: MouseEvent) {
+        return setAction(onMouseDown);
+      },
+
+      onMouseUp(e: MouseEvent) {
+        return setAction((a) => onMouseUp(a, scene, controls.controls, e));
+      },
+
+      onMouseMove(e: MouseEvent) {
+        return setAction((a) => onMouseMove(a, scene, controls.controls, e));
+      },
+
+      onMouseEnter(e: MouseEvent) {
+        return setAction((a) => onMouseEnter(a, scene, controls.controls, e));
+      },
+
+      onMouseLeave() {
+        return setAction(onMouseLeave);
+      },
+    },
+
+    keyboard: {
+      onEscape() {
+        return setAction((a) => onEscape(a, scene, controls.controls));
+      },
+    },
+
+    ui: {
+      hoverElement(id) {
+        return setAction((a) => onUIHoverElement(a, id));
+      },
+
+      clear() {
+        return setAction((a) => onUIClear(a));
+      },
+    },
+  };
+};
 
 export interface InteractionCtrl {
-  mouseDown(e: MouseEvent): void;
-  mouseUp(e: MouseEvent): void;
-  mouseMove(e: MouseEvent): void;
-  mouseEnter(e: MouseEvent): void;
-  mouseLeave(): void;
+  action(): Action;
+  viewport: ViewportInteractions;
+  keyboard: KeyboardInteractions;
+  ui: UIInteractions;
 }
 
-export enum MouseEvents {
-  Enter,
-  Leave,
-  Down,
-  Up,
-  Move,
+export interface KeyboardInteractions {
+  onEscape(): Action;
 }
 
-export interface MouseAction {
-  event: MouseEvents;
-  position: Flatten.Point;
+export interface ViewportInteractions {
+  onMouseDown(e: MouseEvent): Action;
+  onMouseUp(e: MouseEvent): Action;
+  onMouseMove(e: MouseEvent): Action;
+  onMouseEnter(e: MouseEvent): Action;
+  onMouseLeave(): Action;
+}
+
+export interface UIInteractions {
+  hoverElement(id: string): Action;
+  clear(): Action;
 }
 
 const computePosition = (controls: ControlsState, e: MouseEvent): Position => {
@@ -52,16 +100,16 @@ const computePosition = (controls: ControlsState, e: MouseEvent): Position => {
   return { x, y };
 };
 
-export const onEscape = (
+const onEscape = (
   currentAction: Action,
   scene: SceneReader,
   controls: ControlsState
 ): Action => computeEscapeAction(currentAction, scene, controls);
 
-export const onMouseDown = (currentAction: Action): Action =>
+const onMouseDown = (currentAction: Action): Action =>
   computeMouseDownAction(currentAction);
 
-export const onMouseUp = (
+const onMouseUp = (
   currentAction: Action,
   scene: SceneReader,
   controls: ControlsState,
@@ -69,7 +117,7 @@ export const onMouseUp = (
 ): Action =>
   computeMouseUpAction(currentAction, scene, computePosition(controls, e));
 
-export const onMouseEnter = (
+const onMouseEnter = (
   currentAction: Action,
   scene: SceneReader,
   controls: ControlsState,
@@ -82,12 +130,12 @@ export const onMouseEnter = (
     computePosition(controls, e)
   );
 
-export const onMouseLeave = (currentAction: Action): Action =>
+const onMouseLeave = (currentAction: Action): Action =>
   currentAction.kind === ActionKind.Selecting
     ? currentAction
     : { kind: ActionKind.None };
 
-export const onMouseMove = (
+const onMouseMove = (
   currentAction: Action,
   scene: SceneReader,
   controls: ControlsState,
@@ -580,6 +628,39 @@ const enterInIntersectionMode = (
     y,
     kind: ActionKind.PlacingIntersection,
   };
+};
+
+const onUIHoverElement = (currentAction: Action, target: string): Action => {
+  if (currentAction.kind === ActionKind.Selecting) {
+    return {
+      ...currentAction,
+      kind: ActionKind.UIHoveringElementWhileSelecting,
+      hovered: target,
+    };
+  }
+
+  return {
+    kind: ActionKind.UIHoveringElement,
+    hovered: target,
+  };
+};
+
+const onUIClear = (currentAction: Action): Action => {
+  switch (currentAction.kind) {
+    case ActionKind.Selecting:
+    case ActionKind.UIHoveringElementWhileSelecting: {
+      return {
+        kind: ActionKind.Selecting,
+        selected: {
+          ...currentAction.selected,
+        },
+        x: "x" in currentAction ? currentAction.x : 0,
+        y: "y" in currentAction ? currentAction.y : 0,
+      };
+    }
+  }
+
+  return { kind: ActionKind.None };
 };
 
 const isInVerticalLineMode = ({ mode }: ControlsState) =>

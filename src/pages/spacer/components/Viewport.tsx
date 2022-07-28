@@ -10,25 +10,25 @@ import { useViewportBounds } from "./ViewportStage";
 import { SceneCtl } from "../lib/scene";
 import { render } from "../lib/renderer";
 import { ControlsCtrl } from "../lib/controls";
-import * as Interactions from "../lib/interactor";
-import { Action, ActionKind } from "../lib/actions";
+import { InteractionCtrl } from "../lib/interactor";
 
 export interface ViewportProps {
   padding?: number;
   scene: SceneCtl;
   controls: ControlsCtrl;
+  interactor: InteractionCtrl;
 }
 
 export const Viewport: ParentComponent<ViewportProps> = ({
   scene,
   controls,
+  interactor,
 }) => {
   const [el, setEl] = createSignal<HTMLCanvasElement>();
-  const [action, setAction] = createSignal<Action>({ kind: ActionKind.None });
   const bounds = useViewportBounds();
 
   createEffect(() => {
-    render(scene, action(), el(), bounds.width, bounds.height);
+    render(scene, interactor.action(), el(), bounds.width, bounds.height);
   });
 
   createEffect(() => {
@@ -40,7 +40,7 @@ export const Viewport: ParentComponent<ViewportProps> = ({
       if (e.key === "Escape") {
         batch(() => {
           controls.exitMode();
-          setAction((a) => Interactions.onEscape(a, scene, controls.controls));
+          interactor.keyboard.onEscape();
         });
       }
     };
@@ -52,7 +52,7 @@ export const Viewport: ParentComponent<ViewportProps> = ({
   const onMouseDown = (e: MouseEvent) => {
     batch(() => {
       scene.updateWithAction(
-        setAction(Interactions.onMouseDown),
+        interactor.viewport.onMouseDown(e),
         controls.controls.grid
       );
     });
@@ -61,9 +61,7 @@ export const Viewport: ParentComponent<ViewportProps> = ({
   const onMouseUp = (e: MouseEvent) => {
     batch(() => {
       scene.updateWithAction(
-        setAction((a) =>
-          Interactions.onMouseUp(a, scene, controls.controls, e)
-        ),
+        interactor.viewport.onMouseUp(e),
         controls.controls.grid
       );
     });
@@ -72,9 +70,7 @@ export const Viewport: ParentComponent<ViewportProps> = ({
   const onMouseEnter = (e: MouseEvent) => {
     batch(() => {
       scene.updateWithAction(
-        setAction((a) =>
-          Interactions.onMouseEnter(a, scene, controls.controls, e)
-        ),
+        interactor.viewport.onMouseEnter(e),
         controls.controls.grid
       );
     });
@@ -83,7 +79,7 @@ export const Viewport: ParentComponent<ViewportProps> = ({
   const onMouseLeave = (e: MouseEvent) => {
     batch(() => {
       scene.updateWithAction(
-        setAction(Interactions.onMouseLeave),
+        interactor.viewport.onMouseLeave(),
         controls.controls.grid
       );
     });
@@ -92,9 +88,7 @@ export const Viewport: ParentComponent<ViewportProps> = ({
   const onMouseMove = (e: MouseEvent) => {
     batch(() => {
       scene.updateWithAction(
-        setAction((a) =>
-          Interactions.onMouseMove(a, scene, controls.controls, e)
-        ),
+        interactor.viewport.onMouseMove(e),
         controls.controls.grid
       );
     });
