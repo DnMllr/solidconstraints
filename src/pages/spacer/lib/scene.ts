@@ -1,12 +1,7 @@
 import Flatten from "@flatten-js/core";
 import { nanoid } from "nanoid";
 import { batch, createMemo } from "solid-js";
-import {
-  createStore,
-  produce,
-  SetStoreFunction,
-  StoreSetter,
-} from "solid-js/store";
+import { createStore, produce, SetStoreFunction } from "solid-js/store";
 import { Action, ActionKind } from "./actions";
 
 const ArbitrarilyBig = 9999999999999;
@@ -29,7 +24,7 @@ class Identifier {
       return this.cache[key];
     }
 
-    this.cache[key] = nanoid();
+    this.cache[key] = nanoid(6);
 
     return this.cache[key];
   }
@@ -225,6 +220,7 @@ export interface SceneReader {
 
 export interface SceneWriter {
   updateWithAction(action: Action, grid?: Position): void;
+  applyGrid(grid?: Position): void;
 }
 
 export type SceneCtl = SceneReader & SceneWriter;
@@ -435,12 +431,31 @@ const createSceneWriter = (
     return id;
   };
 
-  const dragIntersection = (id: string, x: number, y: number) => {
-    const point = reader.points()[id];
-    batch(() => {
-      dragHorizontalLine(point.x, y);
-      dragVerticalLine(point.y, x);
-    });
+  const applyGrid = ({ x, y }: Position) => {
+    set(
+      "lines",
+      produce((lines) => {
+        let min = 0;
+        for (let id of reader.grid().xs) {
+          const el = lines[id];
+          el.v /= y;
+          el.v = Math.round(el.v);
+          el.v *= y;
+          el.v = Math.max(min, el.v);
+          min = el.v + y;
+        }
+
+        min = 0;
+        for (let id of reader.grid().ys) {
+          const el = lines[id];
+          el.v /= x;
+          el.v = Math.round(el.v);
+          el.v *= x;
+          el.v = Math.max(min, el.v);
+          min = el.v + x;
+        }
+      })
+    );
   };
 
   return {
@@ -469,6 +484,11 @@ const createSceneWriter = (
           dragVerticalLine(intersection.y, action.x, grid);
           dragHorizontalLine(intersection.x, action.y, grid);
           return;
+      }
+    },
+    applyGrid(grid?: Position) {
+      if (grid) {
+        applyGrid(grid);
       }
     },
   };

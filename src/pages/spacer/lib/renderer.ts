@@ -85,35 +85,37 @@ const drawInsertPoint = (rc: RoughCanvas, { x, y }: Position) => {
 const drawTarget = (
   rc: RoughCanvas,
   scene: SceneReader,
-  targetID: string,
+  targets: Set<string>,
   width: number,
   height: number
 ) => {
-  const target = scene.lookup(targetID);
-  if (target.kind === Kind.Line) {
-    rc.line(
-      Math.max(target.geom.start.x, padding),
-      Math.max(target.geom.start.y, padding),
-      Math.min(target.geom.end.x, width),
-      Math.min(target.geom.end.y, height),
-      grey
-    );
-  }
+  for (let targetID of targets.values()) {
+    const target = scene.lookup(targetID);
+    if (target.kind === Kind.Line) {
+      rc.line(
+        Math.max(target.geom.start.x, padding),
+        Math.max(target.geom.start.y, padding),
+        Math.min(target.geom.end.x, width),
+        Math.min(target.geom.end.y, height),
+        grey
+      );
+    }
 
-  if (target.kind === Kind.Point) {
-    rc.circle(target.geom.x, target.geom.y, 14, black);
+    if (target.kind === Kind.Point) {
+      rc.circle(target.geom.x, target.geom.y, 14, black);
+    }
   }
 };
 
 const drawNonTargetElements = (
   rc: RoughCanvas,
   scene: SceneReader,
-  target: string | undefined,
+  targets: Set<string> | undefined,
   width: number,
   height: number
 ) => {
   for (let el of Object.values(scene.lines())) {
-    if (target && target === el.id) {
+    if (targets && targets.has(el.id)) {
       continue;
     }
 
@@ -127,7 +129,7 @@ const drawNonTargetElements = (
   }
 
   for (let el of Object.values(scene.points())) {
-    if (target && target === el.id) {
+    if (targets && targets.has(el.id)) {
       continue;
     }
 
@@ -138,6 +140,76 @@ const drawNonTargetElements = (
 const drawPoints = (rc: RoughCanvas, scene: SceneReader) => {
   for (let el of Object.values(scene.points())) {
     rc.circle(el.geom.x, el.geom.y, 11, grey);
+  }
+};
+
+const drawBaseScene = (
+  rc: RoughCanvas,
+  scene: SceneReader,
+  action: Action,
+  width: number,
+  height: number
+) => {
+  drawMouseTicks(rc, action, height);
+  const target = getTarget(action);
+  const targets = new Set<string>();
+
+  if (target != null) {
+    targets.add(target);
+  }
+
+  if (action.kind === ActionKind.PlacingIntersectionAtIntersection) {
+    targets.add(action.horizontal);
+    targets.add(action.vertical);
+  }
+
+  drawNonTargetElements(rc, scene, targets, width, height);
+  drawTarget(rc, scene, targets, width, height);
+};
+
+const drawAction = (
+  rc: RoughCanvas,
+  scene: SceneReader,
+  action: Action,
+  width: number,
+  height: number
+) => {
+  switch (action.kind) {
+    case ActionKind.PlacingHorizontalLine:
+      drawHorizontalInsertLine(rc, { x: action.x, y: action.y }, width);
+      return;
+
+    case ActionKind.PlacingVerticalLine:
+      drawVerticalInsertLine(rc, { x: action.x, y: action.y }, width);
+      return;
+
+    case ActionKind.PlacingIntersection:
+      drawInsertPoint(rc, { x: action.x, y: action.y });
+      drawVerticalInsertLine(rc, { x: action.x, y: action.y }, width);
+      drawHorizontalInsertLine(rc, { x: action.x, y: action.y }, width);
+      return;
+
+    case ActionKind.PlacingIntersectionAlongHorizontalLine: {
+      const line = scene.lines()[action.target];
+      drawInsertPoint(rc, { x: action.x, y: line.v });
+      drawVerticalInsertLine(rc, { x: action.x, y: action.y }, width);
+      return;
+    }
+
+    case ActionKind.PlacingIntersectionAlongVerticalLine: {
+      const line = scene.lines()[action.target];
+      drawInsertPoint(rc, { x: line.v, y: action.y });
+      drawHorizontalInsertLine(rc, { x: action.x, y: action.y }, width);
+      return;
+    }
+
+    case ActionKind.PlacingIntersectionAtIntersection: {
+      const lines = scene.lines();
+      const h = lines[action.horizontal];
+      const v = lines[action.vertical];
+      drawInsertPoint(rc, { x: v.v, y: h.v });
+      return;
+    }
   }
 };
 
@@ -152,12 +224,8 @@ export const render = (
   const rc = rough.canvas(el);
   drawAxis(rc, width, height);
   if (action.kind !== ActionKind.None) {
-    drawMouseTicks(rc, action, height);
-    const target = getTarget(action);
-    drawNonTargetElements(rc, scene, target, width, height);
-    if (target != null) {
-      drawTarget(rc, scene, target, width, height);
-    }
+    drawBaseScene(rc, scene, action, width, height);
+    drawAction(rc, scene, action, width, height);
   } else {
     if (Object.values(scene.polygons()).length > 0) {
       // TODO(Dan): Draw polygons

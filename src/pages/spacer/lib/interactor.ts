@@ -112,6 +112,7 @@ const computeMouseMoveAction = (
     case ActionKind.CreateHorizontalLine:
     case ActionKind.CreateVerticalLine:
     case ActionKind.PlacingIntersectionAlongVerticalLine:
+    case ActionKind.PlacingIntersectionAtIntersection:
     case ActionKind.PlacingIntersectionAlongHorizontalLine:
     case ActionKind.HoveringIntersection:
     case ActionKind.HoveringHorizontalLine:
@@ -425,32 +426,39 @@ const enterInIntersectionMode = (
     return { ...currentAction, x, y };
   }
 
-  const target = highestPriorityElement(scene.hit(x, y));
+  const target = intersectionHits(scene.hit(x, y));
 
   if (target) {
-    switch (target.kind) {
-      case Kind.Point:
+    if (!Array.isArray(target)) {
+      return {
+        kind: ActionKind.HoveringIntersection,
+        target: target.id,
+      };
+    } else {
+      const [h, v] = target;
+      if (!v) {
         return {
-          kind: ActionKind.HoveringIntersection,
-          target: target.id,
+          x,
+          y,
+          target: h.id,
+          kind: ActionKind.PlacingIntersectionAlongHorizontalLine,
         };
-      case Kind.Line:
-        switch (target.direction) {
-          case Direction.Vertical:
-            return {
-              x,
-              y,
-              target: target.id,
-              kind: ActionKind.PlacingIntersectionAlongVerticalLine,
-            };
-          case Direction.Horizontal:
-            return {
-              x,
-              y,
-              target: target.id,
-              kind: ActionKind.PlacingIntersectionAlongHorizontalLine,
-            };
-        }
+      } else if (!h) {
+        return {
+          x,
+          y,
+          target: v.id,
+          kind: ActionKind.PlacingIntersectionAlongVerticalLine,
+        };
+      } else {
+        return {
+          x,
+          y,
+          horizontal: h.id,
+          vertical: v.id,
+          kind: ActionKind.PlacingIntersectionAtIntersection,
+        };
+      }
     }
   }
 
@@ -502,4 +510,22 @@ const firstHorizontalLine = (elements: Geometry[]): GeoLine | undefined => {
 
 const highestPriorityElement = (elements: Geometry[]): Geometry | undefined => {
   return firstPoint(elements) || firstLine(elements);
+};
+
+const intersectionHits = (
+  elements: Geometry[]
+): GeoPoint | [GeoLine | undefined, GeoLine | undefined] | undefined => {
+  const fp = firstPoint(elements);
+  if (fp != null) {
+    return fp;
+  }
+
+  const h = firstHorizontalLine(elements);
+  const v = firstVerticalLine(elements);
+
+  if (!h && !v) {
+    return undefined;
+  }
+
+  return [h, v];
 };

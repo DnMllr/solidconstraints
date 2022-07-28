@@ -25,6 +25,10 @@ export const Viewport: ParentComponent<ViewportProps> = ({
     render(scene, action(), el(), bounds.width, bounds.height);
   });
 
+  createEffect(() => {
+    scene.applyGrid(controls.controls.grid);
+  });
+
   const onMouseDown = (e: MouseEvent) => {
     batch(() => {
       scene.updateWithAction(
