@@ -1,6 +1,6 @@
 import Flatten from "@flatten-js/core";
 import { createSignal } from "solid-js";
-import { Action, ActionKind } from "./actions";
+import { Action, ActionKind, lookupActionKind } from "./actions";
 import { ControlsCtrl, ControlsState, Mode } from "./controls";
 import {
   Direction,
@@ -20,6 +20,11 @@ export const createInteractor = (
 
   return {
     action,
+    debug() {
+      const a = action();
+      console.log({ ...a, kind: lookupActionKind(a.kind) });
+    },
+
     viewport: {
       onMouseDown(e: MouseEvent) {
         return setAction(onMouseDown);
@@ -62,6 +67,7 @@ export const createInteractor = (
 
 export interface InteractionCtrl {
   action(): Action;
+  debug(): void;
   viewport: ViewportInteractions;
   keyboard: KeyboardInteractions;
   ui: UIInteractions;

@@ -11,6 +11,7 @@ import { SceneCtl } from "../lib/scene";
 import { render } from "../lib/renderer";
 import { ControlsCtrl } from "../lib/controls";
 import { InteractionCtrl } from "../lib/interactor";
+import { ActionKind, lookupActionKind } from "../lib/actions";
 
 export interface ViewportProps {
   padding?: number;
@@ -28,6 +29,7 @@ export const Viewport: ParentComponent<ViewportProps> = ({
   const bounds = useViewportBounds();
 
   createEffect(() => {
+    interactor.debug();
     render(scene, interactor.action(), el(), bounds.width, bounds.height);
   });
 

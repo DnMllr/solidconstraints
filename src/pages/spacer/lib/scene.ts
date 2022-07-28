@@ -1,6 +1,6 @@
 import Flatten from "@flatten-js/core";
 import { nanoid } from "nanoid";
-import { batch, createMemo } from "solid-js";
+import { createMemo } from "solid-js";
 import { createStore, produce, SetStoreFunction } from "solid-js/store";
 import { Action, ActionKind } from "./actions";
 
@@ -42,7 +42,7 @@ interface HasKind<T extends Kind> {
   kind: T;
 }
 
-interface HasID {
+export interface HasID {
   id: string;
 }
 

@@ -1,4 +1,4 @@
-import { Direction, SceneReader } from "./scene";
+import { Direction, Kind, SceneReader } from "./scene";
 import rough from "roughjs";
 import { RoughCanvas } from "roughjs/bin/canvas";
 import { Options } from "roughjs/bin/core";
@@ -534,6 +534,27 @@ const renderAction = (
       draw.point.dragging(rc, points[action.dragged.point].geom);
 
       finishScene(rc, scene, width, height, drawn);
+      return;
+    }
+
+    case ActionKind.UIHoveringElement: {
+      const drawn = new Set<string>([action.hovered]);
+      draw.point.all(rc, scene, drawn);
+
+      const el = scene.lookup(action.hovered);
+
+      switch (el.kind) {
+        case Kind.Line: {
+          draw.lines.hovering(rc, el.geom, width, height);
+          break;
+        }
+
+        case Kind.Point: {
+          draw.point.hovering(rc, el.geom);
+          break;
+        }
+      }
+
       return;
     }
   }
