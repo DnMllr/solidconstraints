@@ -22,7 +22,9 @@ export const Viewport: ParentComponent<ViewportProps> = ({
   const bounds = useViewportBounds();
 
   createEffect(() => {
-    render(scene, action(), el(), bounds.width, bounds.height);
+    const a = action();
+    console.log({ ...a, kind: lookupActionKind(a.kind) });
+    render(scene, a, el(), bounds.width, bounds.height);
   });
 
   createEffect(() => {

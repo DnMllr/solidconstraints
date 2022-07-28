@@ -461,29 +461,47 @@ const createSceneWriter = (
   return {
     updateWithAction(action: Action, grid?: Position) {
       switch (action.kind) {
-        case ActionKind.CreateHorizontalLine:
+        case ActionKind.CreateHorizontalLine: {
           createHorizontalLine(action.y);
           return;
-        case ActionKind.CreateVerticalLine:
+        }
+
+        case ActionKind.CreateVerticalLine: {
           createVerticalLine(action.x);
           return;
-        case ActionKind.CreateIntersection:
+        }
+
+        case ActionKind.CreateIntersection: {
           createIntersection(
             createHorizontalLine(action.y),
             createVerticalLine(action.x)
           );
           return;
-        case ActionKind.DraggingHorizontalLine:
-          dragHorizontalLine(action.target, action.y, grid);
+        }
+
+        case ActionKind.DraggingHorizontalLine: {
+          for (let line of action.dragged.lines.horizontal) {
+            dragHorizontalLine(line, action.y, grid);
+          }
           return;
-        case ActionKind.DraggingVerticalLine:
-          dragVerticalLine(action.target, action.x, grid);
+        }
+
+        case ActionKind.DraggingVerticalLine: {
+          for (let line of action.dragged.lines.vertical) {
+            dragVerticalLine(line, action.x, grid);
+          }
           return;
-        case ActionKind.DraggingIntersection:
-          const intersection = reader.points()[action.target];
-          dragVerticalLine(intersection.y, action.x, grid);
-          dragHorizontalLine(intersection.x, action.y, grid);
+        }
+
+        case ActionKind.DraggingIntersection: {
+          const points = reader.points();
+          for (let point of action.dragged.points) {
+            const intersection = points[point];
+            dragVerticalLine(intersection.y, action.x, grid);
+            dragHorizontalLine(intersection.x, action.y, grid);
+          }
           return;
+        }
       }
     },
     applyGrid(grid?: Position) {
