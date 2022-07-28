@@ -33,12 +33,12 @@ interface HasActionKind<T extends ActionKind> {
   kind: T;
 }
 
-interface HasTarget<T extends Geometry> {
-  target: T;
+interface HasTarget {
+  target: string;
 }
 
 interface HasSelections {
-  selections: Geometry[];
+  selections: string[];
 }
 
 interface HasX {
@@ -72,51 +72,53 @@ interface PlacingHorizontalLineAction
 
 interface HoveringVerticalLineAction
   extends HasActionKind<ActionKind.HoveringVerticalLine>,
-    HasTarget<GeoLine> {}
+    HasTarget {}
 
 interface HoveringHorizontalLineWhileSelectingAction
   extends HasActionKind<ActionKind.HoveringHorizontalLineWhileSelecting>,
-    HasTarget<GeoLine>,
+    HasTarget,
     HasSelections {}
 
 interface HoveringVerticalLineWhileSelectingAction
   extends HasActionKind<ActionKind.HoveringVerticalLineWhileSelecting>,
-    HasTarget<GeoLine>,
+    HasTarget,
     HasSelections {}
 
 interface HoveringIntersectionWhileSelectingAction
   extends HasActionKind<ActionKind.HoveringIntersectionWhileSelecting>,
-    HasTarget<GeoPoint>,
+    HasTarget,
     HasSelections {}
 
 interface TouchingVerticalLineAction
   extends HasActionKind<ActionKind.TouchingVerticalLine>,
-    HasTarget<GeoLine> {}
+    HasTarget {}
 
 interface TouchingHorizontalLineAction
   extends HasActionKind<ActionKind.TouchingHorizontalLine>,
-    HasTarget<GeoLine> {}
+    HasTarget {}
 
 interface HoveringHorizontalLineAction
   extends HasActionKind<ActionKind.HoveringHorizontalLine>,
-    HasTarget<GeoLine> {}
+    HasTarget {}
 
 interface DraggingVerticalLineAction
   extends HasActionKind<ActionKind.DraggingVerticalLine>,
-    HasTarget<GeoLine> {}
+    HasTarget,
+    HasX {}
 
 interface DraggingHorizontalLineAction
   extends HasActionKind<ActionKind.DraggingHorizontalLine>,
-    HasTarget<GeoLine> {}
+    HasTarget,
+    HasY {}
 
 interface SelectingVerticalLineAction
   extends HasActionKind<ActionKind.SelectingVerticalLine>,
-    HasTarget<GeoLine>,
+    HasTarget,
     HasSelections {}
 
 interface SelectingHorizontalLineAction
   extends HasActionKind<ActionKind.SelectingHorizontalLine>,
-    HasTarget<GeoLine>,
+    HasTarget,
     HasSelections {}
 
 interface PlacingIntersectionAction
@@ -125,29 +127,30 @@ interface PlacingIntersectionAction
 
 interface PlacingIntersectionAlongVerticalLineAction
   extends HasActionKind<ActionKind.PlacingIntersectionAlongVerticalLine>,
-    HasTarget<GeoLine>,
+    HasTarget,
     HasCoordinates {}
 
 interface PlacingIntersectionAlongHorizontalLineAction
   extends HasActionKind<ActionKind.PlacingIntersectionAlongHorizontalLine>,
-    HasTarget<GeoLine>,
+    HasTarget,
     HasCoordinates {}
 
 interface HoveringIntersectionAction
   extends HasActionKind<ActionKind.HoveringIntersection>,
-    HasTarget<GeoPoint> {}
+    HasTarget {}
 
 interface TouchingIntersectionAction
   extends HasActionKind<ActionKind.TouchingIntersection>,
-    HasTarget<GeoPoint> {}
+    HasTarget {}
 
 interface DraggingIntersectionAction
   extends HasActionKind<ActionKind.DraggingIntersection>,
-    HasTarget<GeoPoint> {}
+    HasTarget,
+    HasCoordinates {}
 
 interface SelectingIntersectionAction
   extends HasActionKind<ActionKind.SelectingIntersection>,
-    HasTarget<GeoPoint>,
+    HasTarget,
     HasSelections {}
 
 interface CreateHorizontalLineAction
@@ -210,7 +213,7 @@ export const getPosition = (action: Action): Position | undefined => {
   }
 };
 
-export const getTarget = (action: Action): Geometry | undefined => {
+export const getTarget = (action: Action): string | undefined => {
   if ("target" in action) {
     return action.target;
   }

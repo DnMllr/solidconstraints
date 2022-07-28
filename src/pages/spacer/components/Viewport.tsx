@@ -22,8 +22,6 @@ export const Viewport: ParentComponent<ViewportProps> = ({
   const bounds = useViewportBounds();
 
   createEffect(() => {
-    const a = action();
-    console.log({ ...a, kind: lookupActionKind(a.kind) });
     render(scene, action(), el(), bounds.width, bounds.height);
   });
 
@@ -40,7 +38,6 @@ export const Viewport: ParentComponent<ViewportProps> = ({
     batch(() => {
       scene.updateWithAction(
         setAction((a) => Interactions.onMouseUp(a, controls.controls, e)),
-
         controls.controls.grid
       );
     });

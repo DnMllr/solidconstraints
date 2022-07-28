@@ -1,7 +1,12 @@
 import Flatten from "@flatten-js/core";
 import { nanoid } from "nanoid";
 import { batch, createMemo } from "solid-js";
-import { createStore, produce, SetStoreFunction } from "solid-js/store";
+import {
+  createStore,
+  produce,
+  SetStoreFunction,
+  StoreSetter,
+} from "solid-js/store";
 import { Action, ActionKind } from "./actions";
 
 const ArbitrarilyBig = 9999999999999;
@@ -315,8 +320,39 @@ const createSceneWriter = (
     return id;
   };
 
-  const dragHorizontalLine = (id: string, y: number) => {
-    set("lines", id, "v", y);
+  const dragHorizontalLine = (id: string, y: number, grid?: Position) => {
+    set(
+      "lines",
+      produce((lines) => {
+        const offset = grid?.y || 1;
+        const linesInOrder = reader.grid().xs.map((id) => lines[id]);
+        const index = linesInOrder.findIndex((l) => l.id === id);
+        let dependentLines = linesInOrder.slice(0, index);
+        dependentLines.reverse();
+
+        let currentY = y;
+        lines[id].v = currentY;
+        currentY -= offset;
+
+        for (let line of dependentLines) {
+          if (line.v > currentY) {
+            lines[line.id].v = currentY;
+            currentY -= offset;
+          }
+        }
+
+        dependentLines = linesInOrder.slice(index + 1);
+
+        currentY = y + offset;
+
+        for (let line of dependentLines) {
+          if (line.v < currentY) {
+            lines[line.id].v = currentY;
+            currentY += offset;
+          }
+        }
+      })
+    );
   };
 
   const createVerticalLine = (value: number): string => {
@@ -345,8 +381,39 @@ const createSceneWriter = (
     return id;
   };
 
-  const dragVerticalLine = (id: string, x: number) => {
-    set("lines", id, "v", x);
+  const dragVerticalLine = (id: string, x: number, grid?: Position) => {
+    set(
+      "lines",
+      produce((lines) => {
+        const offset = grid?.x || 1;
+        const linesInOrder = reader.grid().ys.map((id) => lines[id]);
+        const index = linesInOrder.findIndex((l) => l.id === id);
+        let dependentLines = linesInOrder.slice(0, index);
+        dependentLines.reverse();
+
+        let currentX = x;
+        lines[id].v = currentX;
+        currentX -= offset;
+
+        for (let line of dependentLines) {
+          if (line.v > currentX) {
+            lines[line.id].v = currentX;
+            currentX -= offset;
+          }
+        }
+
+        dependentLines = linesInOrder.slice(index + 1);
+
+        currentX = x + offset;
+
+        for (let line of dependentLines) {
+          if (line.v < currentX) {
+            lines[line.id].v = currentX;
+            currentX += offset;
+          }
+        }
+      })
+    );
   };
 
   const createIntersection = (x: string, y: string): string => {
@@ -390,6 +457,17 @@ const createSceneWriter = (
             createHorizontalLine(action.y),
             createVerticalLine(action.x)
           );
+          return;
+        case ActionKind.DraggingHorizontalLine:
+          dragHorizontalLine(action.target, action.y, grid);
+          return;
+        case ActionKind.DraggingVerticalLine:
+          dragVerticalLine(action.target, action.x, grid);
+          return;
+        case ActionKind.DraggingIntersection:
+          const intersection = reader.points()[action.target];
+          dragVerticalLine(intersection.y, action.x, grid);
+          dragHorizontalLine(intersection.x, action.y, grid);
           return;
       }
     },

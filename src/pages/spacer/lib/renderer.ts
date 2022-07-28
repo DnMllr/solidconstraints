@@ -84,10 +84,12 @@ const drawInsertPoint = (rc: RoughCanvas, { x, y }: Position) => {
 
 const drawTarget = (
   rc: RoughCanvas,
-  target: Geometry,
+  scene: SceneReader,
+  targetID: string,
   width: number,
   height: number
 ) => {
+  const target = scene.lookup(targetID);
   if (target.kind === Kind.Line) {
     rc.line(
       Math.max(target.geom.start.x, padding),
@@ -106,12 +108,12 @@ const drawTarget = (
 const drawNonTargetElements = (
   rc: RoughCanvas,
   scene: SceneReader,
-  target: Geometry | undefined,
+  target: string | undefined,
   width: number,
   height: number
 ) => {
   for (let el of Object.values(scene.lines())) {
-    if (target && target.id === el.id) {
+    if (target && target === el.id) {
       continue;
     }
 
@@ -125,7 +127,7 @@ const drawNonTargetElements = (
   }
 
   for (let el of Object.values(scene.points())) {
-    if (target && target.id === el.id) {
+    if (target && target === el.id) {
       continue;
     }
 
@@ -154,7 +156,7 @@ export const render = (
     const target = getTarget(action);
     drawNonTargetElements(rc, scene, target, width, height);
     if (target != null) {
-      drawTarget(rc, target, width, height);
+      drawTarget(rc, scene, target, width, height);
     }
   } else {
     if (Object.values(scene.polygons()).length > 0) {

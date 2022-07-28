@@ -109,6 +109,8 @@ const computeMouseMoveAction = (
     case ActionKind.HoveringVerticalLine:
     case ActionKind.PlacingIntersection:
     case ActionKind.CreateIntersection:
+    case ActionKind.CreateHorizontalLine:
+    case ActionKind.CreateVerticalLine:
     case ActionKind.PlacingIntersectionAlongVerticalLine:
     case ActionKind.PlacingIntersectionAlongHorizontalLine:
     case ActionKind.HoveringIntersection:
@@ -120,6 +122,7 @@ const computeMouseMoveAction = (
       return {
         kind: ActionKind.DraggingVerticalLine,
         target: currentAction.target,
+        x,
       };
     }
     case ActionKind.TouchingHorizontalLine:
@@ -127,8 +130,17 @@ const computeMouseMoveAction = (
       return {
         kind: ActionKind.DraggingHorizontalLine,
         target: currentAction.target,
+        y,
       };
     }
+    case ActionKind.TouchingIntersection:
+    case ActionKind.DraggingIntersection:
+      return {
+        kind: ActionKind.DraggingIntersection,
+        target: currentAction.target,
+        x,
+        y,
+      };
     case ActionKind.HoveringHorizontalLineWhileSelecting:
     case ActionKind.HoveringVerticalLineWhileSelecting:
     case ActionKind.HoveringIntersectionWhileSelecting:
@@ -142,20 +154,20 @@ const computeMouseMoveAction = (
                 return {
                   ...currentAction,
                   kind: ActionKind.HoveringVerticalLineWhileSelecting,
-                  target: hit,
+                  target: hit.id,
                 };
               case Direction.Horizontal:
                 return {
                   ...currentAction,
                   kind: ActionKind.HoveringHorizontalLineWhileSelecting,
-                  target: hit,
+                  target: hit.id,
                 };
             }
           case Kind.Point:
             return {
               ...currentAction,
               kind: ActionKind.HoveringIntersectionWhileSelecting,
-              target: hit,
+              target: hit.id,
             };
         }
       }
@@ -289,7 +301,7 @@ const enterInNoneMode = (
           return {
             ...currentAction,
             kind: ActionKind.HoveringIntersectionWhileSelecting,
-            target,
+            target: target.id,
           };
         case Kind.Line:
           switch (target.direction) {
@@ -297,31 +309,31 @@ const enterInNoneMode = (
               return {
                 ...currentAction,
                 kind: ActionKind.HoveringHorizontalLineWhileSelecting,
-                target,
+                target: target.id,
               };
             case Direction.Vertical:
               return {
                 ...currentAction,
                 kind: ActionKind.HoveringVerticalLineWhileSelecting,
-                target,
+                target: target.id,
               };
           }
       }
     } else {
       switch (target.kind) {
         case Kind.Point:
-          return { kind: ActionKind.HoveringIntersection, target };
+          return { kind: ActionKind.HoveringIntersection, target: target.id };
         case Kind.Line:
           switch (target.direction) {
             case Direction.Horizontal:
               return {
                 kind: ActionKind.HoveringHorizontalLine,
-                target,
+                target: target.id,
               };
             case Direction.Vertical:
               return {
                 kind: ActionKind.HoveringVerticalLine,
-                target,
+                target: target.id,
               };
           }
       }
@@ -342,7 +354,7 @@ const enterInHorizontalLineMode = (
       return {
         ...currentAction,
         kind: ActionKind.HoveringHorizontalLineWhileSelecting,
-        target,
+        target: target.id,
       };
     }
 
@@ -352,9 +364,10 @@ const enterInHorizontalLineMode = (
   if (target) {
     return {
       kind: ActionKind.HoveringHorizontalLine,
-      target,
+      target: target.id,
     };
   }
+
   return {
     x,
     y,
@@ -374,7 +387,7 @@ const enterInVerticalLineMode = (
       return {
         ...currentAction,
         kind: ActionKind.HoveringVerticalLineWhileSelecting,
-        target,
+        target: target.id,
       };
     }
 
@@ -384,7 +397,7 @@ const enterInVerticalLineMode = (
   if (target) {
     return {
       kind: ActionKind.HoveringVerticalLine,
-      target,
+      target: target.id,
     };
   }
 
@@ -406,7 +419,7 @@ const enterInIntersectionMode = (
       return {
         ...currentAction,
         kind: ActionKind.HoveringIntersectionWhileSelecting,
-        target,
+        target: target.id,
       };
     }
     return { ...currentAction, x, y };
@@ -419,7 +432,7 @@ const enterInIntersectionMode = (
       case Kind.Point:
         return {
           kind: ActionKind.HoveringIntersection,
-          target,
+          target: target.id,
         };
       case Kind.Line:
         switch (target.direction) {
@@ -427,14 +440,14 @@ const enterInIntersectionMode = (
             return {
               x,
               y,
-              target,
+              target: target.id,
               kind: ActionKind.PlacingIntersectionAlongVerticalLine,
             };
           case Direction.Horizontal:
             return {
               x,
               y,
-              target,
+              target: target.id,
               kind: ActionKind.PlacingIntersectionAlongHorizontalLine,
             };
         }
