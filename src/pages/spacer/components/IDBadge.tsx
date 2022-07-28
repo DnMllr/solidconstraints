@@ -38,11 +38,11 @@ const getVariant = (isHighlighted: boolean): "solid" | "subtle" =>
   isHighlighted ? "solid" : "subtle";
 
 const isElementHovered = (action: Action, id: string): boolean => {
-  if ("hovered" in action) {
-    return deepSearch(id, ["point", "points", "line", "lines"], action.hovered);
-  }
-
-  return false;
+  return deepSearch(
+    id,
+    ["hovered", "dragged", "point", "points", "line", "lines"],
+    action
+  );
 };
 
 const deepSearch = (target: string, validKeys: string[], obj: any): boolean => {

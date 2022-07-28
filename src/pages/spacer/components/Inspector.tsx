@@ -33,19 +33,18 @@ interface Elements {
 
 export const Inspector: Component<InspectorProps> = ({ scene, interactor }) => {
   return (
-    <HStack class="w-1/6 h-full min-w-[18rem]">
-      <Divider orientation="vertical" variant="dashed" />
-      <Tabs class="h-full flex-grow">
+    <Box class="w-1/6 h-5/6 min-w-[24rem] absolute top-3 right-3 border rounded-lg shadow overflow-hidden bg-white">
+      <Tabs class="h-full max-h-full !flex flex-col">
         <TabList>
-          <Tab>actions</Tab>
-          <Tab>info</Tab>
+          <Tab _focus={{ boxShadow: "none" }}>Actions</Tab>
+          <Tab _focus={{ boxShadow: "none" }}>Scene</Tab>
         </TabList>
         <TabPanel>Actions...</TabPanel>
-        <TabPanel>
+        <TabPanel class="overflow-y-auto max-h">
           <ElementPanel scene={scene} interactor={interactor} />
         </TabPanel>
       </Tabs>
-    </HStack>
+    </Box>
   );
 };
 
@@ -62,7 +61,7 @@ const ElementPanel: Component<InspectorProps> = ({ scene, interactor }) => {
   });
 
   return (
-    <Accordion allowMultiple>
+    <Accordion allowMultiple class="max-h-full">
       <ElementAccordion
         itemsFrom={() => elements().xLines}
         title="Horizontal Lines"
@@ -124,7 +123,7 @@ interface LineBoxProps {
 
 const LineBox: Component<LineBoxProps> = ({ line, interactor }) => {
   return (
-    <Box>
+    <Box class="p-0 mb-8">
       <VStack alignItems="stretch">
         <HStack justifyContent="space-between">
           <IDBadge interactor={interactor} id={line.id} />
@@ -145,7 +144,7 @@ interface PointBoxProps {
 
 const PointBox: Component<PointBoxProps> = ({ point, interactor }) => {
   return (
-    <Box>
+    <Box class="p-0 mb-8">
       <VStack alignItems="stretch">
         <HStack justifyContent="space-between">
           <IDBadge id={point.id} interactor={interactor} />
@@ -153,11 +152,11 @@ const PointBox: Component<PointBoxProps> = ({ point, interactor }) => {
             {point.geom.x}, {point.geom.y}
           </Text>
         </HStack>
+        <Divider />
         <Text fontWeight="$light" fontSize="$sm">
           intersection of <IDBadge interactor={interactor} id={point.x} /> and{" "}
           <IDBadge interactor={interactor} id={point.y} />
         </Text>
-        <Divider />
       </VStack>
     </Box>
   );

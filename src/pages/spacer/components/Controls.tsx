@@ -1,6 +1,5 @@
 import { Component, createEffect, For, JSX, Show } from "solid-js";
 import {
-  Divider,
   HStack,
   IconButton,
   Input,
@@ -62,12 +61,11 @@ export const Controls: Component<ControlsProps> = ({ ctrl }) => {
   );
 
   return (
-    <VStack class="w-full">
+    <VStack class="w-full border-b shadow">
       <HStack spacing="$4" class="p-2 w-full">
         <For each={leftButtons}>{toIconButton}</For>
         <LeftButtons ctrl={ctrl} />
       </HStack>
-      <Divider orientation="horizontal" variant="dashed" />
     </VStack>
   );
 };

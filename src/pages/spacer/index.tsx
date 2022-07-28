@@ -12,10 +12,10 @@ export const Spacer: Component = () => {
   const interactor = createInteractor(scene, controls);
 
   return (
-    <VStack class="w-full h-full" alignItems="flex-start">
+    <VStack class="w-full h-full absolute" alignItems="flex-start">
       <Controls ctrl={controls} />
       <HStack
-        class="flex-grow w-full"
+        class="flex-grow w-full relative"
         alignItems="stretch"
         justifyContent="stretch"
       >
