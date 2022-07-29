@@ -61,7 +61,7 @@ export const Controls: Component<ControlsProps> = ({ ctrl }) => {
   );
 
   return (
-    <VStack class="w-full border-b shadow">
+    <VStack class="w-full border-b shadow bg-white">
       <HStack spacing="$4" class="p-2 w-full">
         <For each={leftButtons}>{toIconButton}</For>
         <LeftButtons ctrl={ctrl} />
@@ -138,7 +138,7 @@ const InspectorButton: Component<ControlsProps> = ({ ctrl }) => (
     _focus={{ boxShadow: "none" }}
     onClick={ctrl.toggleInspector}
     icon={ctrl.controls.inspectorOpen ? <MagnifyMinus /> : <MagnifyPlus />}
-    variant="ghost"
+    variant={ctrl.controls.inspectorOpen ? "solid" : "ghost"}
     aria-label="enter x axis line mode"
   />
 );

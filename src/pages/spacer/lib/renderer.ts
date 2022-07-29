@@ -73,8 +73,8 @@ const theme: Theme = {
       hovering: 10,
       dragging: 5,
       insert: 10,
-      selected: 4,
-      hoveringSelected: 5,
+      selected: 10,
+      hoveringSelected: 11,
     },
     options: {
       rest: {
@@ -98,10 +98,14 @@ const theme: Theme = {
         fill: "lightblue",
       },
       selected: {
-        stroke: "violet",
+        ...basePoint,
+        fill: "violet",
+        stroke: "red",
       },
       hoveringSelected: {
-        stroke: "red",
+        ...basePoint,
+        fill: "red",
+        stroke: "black",
       },
     },
   },

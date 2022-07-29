@@ -40,10 +40,6 @@ interface HasDragged<T> {
   dragged: T;
 }
 
-interface HasTarget<T> {
-  target: T;
-}
-
 interface HasDirection {
   direction: Direction;
 }
@@ -203,4 +199,121 @@ export const getPosition = (action: Action): Position | undefined => {
 
 export const lookupActionKind = (action: ActionKind): string => {
   return ActionKind[action];
+};
+
+export const hoveredElements = (action: Action): string[] => {
+  return collectByActionKey("hovered", action);
+};
+
+export const selectedElements = (action: Action): string[] => {
+  return collectByActionKey("selected", action);
+};
+
+export const draggedElements = (action: Action): string[] => {
+  return collectByActionKey("dragged", action);
+};
+
+export const isElementHovered = (id: string, action: Action): boolean => {
+  return containsByActionKey("hovered", id, action);
+};
+
+export const isElementDragged = (id: string, action: Action): boolean => {
+  return containsByActionKey("dragged", id, action);
+};
+
+export const isElementSelected = (id: string, action: Action): boolean => {
+  return containsByActionKey("selected", id, action);
+};
+
+export const isReferencedByAction = (id: string, action: Action): boolean => {
+  return deepContains(
+    id,
+    keyWhitelist.concat(["hovered", "dragged", "selected"]),
+    action
+  );
+};
+
+const collectByActionKey = (
+  key: "hovered" | "dragged" | "selected",
+  action: Action
+): string[] => {
+  if (key in action) {
+    return deepCollect(keyWhitelist, action[key]);
+  }
+
+  return [];
+};
+
+const containsByActionKey = (
+  key: "hovered" | "dragged" | "selected",
+  target: string,
+  action: Action
+): boolean => {
+  if (key in action) {
+    return deepContains(target, keyWhitelist, action[key]);
+  }
+
+  return false;
+};
+
+const keyWhitelist = ["point", "points", "line", "lines"];
+
+const deepCollect = (validKeys: string[], obj: any): string[] => {
+  if (!obj) {
+    return [];
+  }
+
+  if (typeof obj === "string") {
+    return [obj];
+  }
+
+  if (Array.isArray(obj)) {
+    const results = [];
+    for (const item of obj) {
+      results.push(...deepCollect(validKeys, item));
+    }
+    return results;
+  }
+
+  if (typeof obj === "object") {
+    const results = [];
+    for (const key of validKeys) {
+      results.push(...deepCollect(validKeys, obj[key]));
+    }
+    return results;
+  }
+
+  return [];
+};
+
+const deepContains = (
+  target: string,
+  validKeys: string[],
+  obj: any
+): boolean => {
+  if (!obj) {
+    return false;
+  }
+
+  if (typeof obj === "string") {
+    return obj === target;
+  }
+
+  if (Array.isArray(obj)) {
+    for (const item of obj) {
+      if (deepContains(target, validKeys, item)) {
+        return true;
+      }
+    }
+  }
+
+  if (typeof obj === "object") {
+    for (const key of validKeys) {
+      if (deepContains(target, validKeys, obj[key])) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 };

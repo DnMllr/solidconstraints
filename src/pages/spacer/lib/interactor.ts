@@ -136,10 +136,24 @@ const onMouseEnter = (
     computePosition(controls, e)
   );
 
-const onMouseLeave = (currentAction: Action): Action =>
-  currentAction.kind === ActionKind.Selecting
-    ? currentAction
-    : { kind: ActionKind.None };
+const onMouseLeave = (currentAction: Action): Action => {
+  switch (currentAction.kind) {
+    case ActionKind.Selecting:
+    case ActionKind.HoveringIntersectionWhileSelecting:
+    case ActionKind.HoveringLineWhileSelecting: {
+      return {
+        kind: ActionKind.Selecting,
+        selected: {
+          ...currentAction.selected,
+        },
+        x: "x" in currentAction ? currentAction.x : 0,
+        y: "y" in currentAction ? currentAction.y : 0,
+      };
+    }
+  }
+
+  return { kind: ActionKind.None };
+};
 
 const onMouseMove = (
   currentAction: Action,
@@ -408,6 +422,37 @@ const computeMouseUpAction = (
         },
       };
     }
+
+    case ActionKind.HoveringIntersectionWhileSelecting: {
+      const intersectionIsSelected = currentAction.selected.points.includes(
+        currentAction.hovered.point
+      );
+
+      const points = intersectionIsSelected
+        ? currentAction.selected.points.filter(
+            (id) => id !== currentAction.hovered.point
+          )
+        : [...currentAction.selected.points, currentAction.hovered.point];
+
+      if (points.length === 0 && currentAction.selected.lines.length === 0) {
+        return {
+          kind: ActionKind.HoveringIntersection,
+          hovered: {
+            ...currentAction.hovered,
+          },
+          x,
+          y,
+        };
+      }
+
+      return {
+        ...currentAction,
+        selected: {
+          ...currentAction.selected,
+          points,
+        },
+      };
+    }
   }
 
   return currentAction;
@@ -491,6 +536,8 @@ const enterInNoneMode = (
         }
       }
     }
+  } else if (currentAction.kind === ActionKind.Selecting) {
+    return { ...currentAction, x, y };
   }
 
   return { kind: ActionKind.Interacting, x, y };
