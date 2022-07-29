@@ -94,6 +94,7 @@ export type AbstractGeometry = Poly | Ring | Segment | Line | Intersection;
 export type Geometry =
   | WithGeometry<Poly, Flatten.Polygon>
   | WithGeometry<Segment, Flatten.Segment>
+  | WithGeometry<Ring, Flatten.Polygon>
   | WithGeometry<Line, Flatten.Segment>
   | WithGeometry<Intersection, Flatten.Point>;
 
@@ -114,15 +115,6 @@ const makeBaseScene = (): BaseScene => ({
   rings: {},
   polys: {},
 });
-
-interface FlattenScene extends HasID {
-  grid: Grid;
-  lines: GeometricRecordOf<Line, Flatten.Line>;
-  intersections: GeometricRecordOf<Intersection, Flatten.Point>;
-  segments: GeometricRecordOf<Segment, Flatten.Segment>;
-  polys: GeometricRecordOf<Poly, Flatten.Polygon>;
-  set: Flatten.PlanarSet;
-}
 
 const { point, segment } = Flatten;
 
@@ -181,11 +173,37 @@ const createIntersections = (
     assertSingle(lines[i.x].geom.intersect(lines[i.y].geom))
   );
 
+const squaredPolar = (point: Flatten.Point, center: Flatten.Point) => {
+  return [
+    Math.atan2(point.y - center.y, point.x - center.x),
+    (point.x - center.x) ** 2 + (point.y - center.y) ** 2,
+  ];
+};
+
+const polySort = (points: Flatten.Point[]): Flatten.Point[] => {
+  let center = point(
+    points.reduce((sum, p) => sum + p.x, 0) / points.length,
+    points.reduce((sum, p) => sum + p.y, 0) / points.length
+  );
+  const withPolarAngleAndDistance = points.map((point) => ({
+    point,
+    squaredPolar: squaredPolar(point, center),
+  }));
+  withPolarAngleAndDistance.sort(
+    (a, b) =>
+      a.squaredPolar[0] - b.squaredPolar[0] ||
+      a.squaredPolar[1] - b.squaredPolar[1]
+  );
+  return withPolarAngleAndDistance.map(({ point }) => point);
+};
+
 const createRings = (
   points: GeometricRecordOf<Intersection, Flatten.Point>,
   rings: RecordOf<Ring>
-): GeometricRecordOf<Ring, Flatten.Point[]> =>
-  mapGeoObject(rings, (r) => r.points.map((p) => points[p].geom));
+): GeometricRecordOf<Ring, Flatten.Polygon> =>
+  mapGeoObject(rings, (r) => {
+    return new Flatten.Polygon(polySort(r.points.map((p) => points[p].geom)));
+  });
 
 const createSegments = (
   points: GeometricRecordOf<Intersection, Flatten.Point>,
@@ -194,13 +212,18 @@ const createSegments = (
   mapGeoObject(segments, (s) => segment(points[s.a].geom, points[s.b].geom));
 
 const createPolys = (
-  rings: GeometricRecordOf<Ring, Flatten.Point[]>,
+  points: GeometricRecordOf<Intersection, Flatten.Point>,
+  rings: GeometricRecordOf<Ring, Flatten.Polygon>,
   polys: RecordOf<Poly>
 ): GeometricRecordOf<Poly, Flatten.Polygon> =>
   mapGeoObject(polys, (p) => {
-    const poly = new Flatten.Polygon(rings[p.exterior].geom);
+    const poly = new Flatten.Polygon(
+      polySort(rings[p.exterior].points.map((p) => points[p].geom))
+    );
     for (let holeID of p.holes) {
-      poly.addFace(rings[holeID].geom);
+      poly.addFace(
+        polySort(rings[p.exterior].points.map((p) => points[holeID].geom))
+      );
     }
     return poly;
   });
@@ -236,11 +259,14 @@ const createSceneReader = (
   );
   const segments = createMemo(() => createSegments(points(), scene.segments));
   const rings = createMemo(() => createRings(points(), scene.rings));
-  const polygons = createMemo(() => createPolys(rings(), scene.polys));
+  const polygons = createMemo(() =>
+    createPolys(points(), rings(), scene.polys)
+  );
   const all = createMemo(() => {
     return {
       ...lines(),
       ...points(),
+      ...rings(),
       ...segments(),
       ...polygons(),
     };

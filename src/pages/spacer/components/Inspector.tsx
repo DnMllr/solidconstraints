@@ -9,7 +9,7 @@ export const Inspector: Component<ElementPanelProps> = ({
   interactor,
 }) => {
   return (
-    <Box class="w-1/6 h-5/6 min-w-[24rem] absolute top-3 right-3 border rounded-lg shadow overflow-hidden bg-white">
+    <Box class="w-1/6 min-w-[24rem] absolute top-5 right-5 border rounded-lg shadow overflow-hidden bg-white">
       <Tabs class="h-full max-h-full !flex flex-col">
         <TabList>
           <Tab _focus={{ boxShadow: "none" }}>Action</Tab>

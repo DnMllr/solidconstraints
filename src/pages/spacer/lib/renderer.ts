@@ -584,7 +584,7 @@ const renderAction = (
         }
 
         case Kind.Point: {
-          if (action.selected.lines.includes(el.id)) {
+          if (action.selected.points.includes(el.id)) {
             draw.point.hoveringSelected(rc, el.geom);
           } else {
             draw.point.selected(rc, el.geom);
