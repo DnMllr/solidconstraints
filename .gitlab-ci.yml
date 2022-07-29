@@ -1,5 +1,17 @@
 image: "node:latest"
 
+before_script:
+  - npm i -g pnpm
+  - pnpm config set store-dir .pnpm-store
+  - pnpm install
+
+cache:
+  key:
+    files:
+      - pnpm-lock.yaml
+  paths:
+    - .pnpm-store
+
 stages:
   - test
   - deploy
@@ -7,22 +19,16 @@ stages:
 check types:
   stage: test
   script:
-    - npm i -g pnpm
-    - pnpm install
     - pnpm run typecheck
 
 run linter:
   stage: test
   script:
-    - npm i -g pnpm
-    - pnpm install
     - pnpm run lint
 
 deploy gitlab pages:
   stage: deploy
   script:
-    - npm i -g pnpm
-    - pnpm install
     - pnpm run build
     - mv ./dist ./public
   artifacts:
