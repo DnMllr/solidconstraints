@@ -2,7 +2,14 @@ import { Direction, Kind, SceneReader } from "./scene";
 import rough from "roughjs";
 import { RoughCanvas } from "roughjs/bin/canvas";
 import { Options } from "roughjs/bin/core";
-import { Action, ActionKind, getXPosition, getYPosition } from "./actions";
+import {
+  Action,
+  ActionKind,
+  getXPosition,
+  getYPosition,
+  isElementSelected,
+  selectedElements,
+} from "./actions";
 import Flatten from "@flatten-js/core";
 
 interface Theme {
@@ -558,6 +565,54 @@ const renderAction = (
           break;
         }
       }
+
+      return;
+    }
+
+    case ActionKind.UIHoveringElementWhileSelecting: {
+      const drawn = new Set<string>([action.hovered]);
+      const el = scene.lookup(action.hovered);
+
+      switch (el.kind) {
+        case Kind.Line: {
+          if (action.selected.lines.includes(el.id)) {
+            draw.lines.hoveringSelected(rc, el.geom, width, height);
+          } else {
+            draw.lines.selected(rc, el.geom, width, height);
+          }
+          break;
+        }
+
+        case Kind.Point: {
+          if (action.selected.lines.includes(el.id)) {
+            draw.point.hoveringSelected(rc, el.geom);
+          } else {
+            draw.point.selected(rc, el.geom);
+          }
+          break;
+        }
+      }
+
+      for (const id of selectedElements(action)) {
+        if (!drawn.has(id)) {
+          drawn.add(id);
+          const el = scene.lookup(id);
+
+          switch (el.kind) {
+            case Kind.Line: {
+              draw.lines.selected(rc, el.geom, width, height);
+              break;
+            }
+
+            case Kind.Point: {
+              draw.point.selected(rc, el.geom);
+              break;
+            }
+          }
+        }
+      }
+
+      finishScene(rc, scene, width, height, drawn);
 
       return;
     }

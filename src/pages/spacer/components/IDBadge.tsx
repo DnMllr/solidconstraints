@@ -14,6 +14,7 @@ export const IDBadge: Component<IDBadgeProps> = ({ id, interactor }) => {
     <Badge
       variant={variant()}
       onMouseEnter={() => {
+        console.log("on mouse enter", Date.now());
         interactor.ui.hoverElement(id);
       }}
       onMouseLeave={() => {

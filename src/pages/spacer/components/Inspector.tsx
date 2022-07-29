@@ -15,10 +15,10 @@ export const Inspector: Component<ElementPanelProps> = ({
           <Tab _focus={{ boxShadow: "none" }}>Action</Tab>
           <Tab _focus={{ boxShadow: "none" }}>Scene</Tab>
         </TabList>
-        <TabPanel class="overflow-y-auto max-h !p-0">
+        <TabPanel class="overflow-y-auto h-full !p-0">
           <ActionPanel interactor={interactor} scene={scene} />
         </TabPanel>
-        <TabPanel class="overflow-y-auto max-h !p-0">
+        <TabPanel class="overflow-y-auto h-full !p-0">
           <ElementPanel scene={scene} interactor={interactor} />
         </TabPanel>
       </Tabs>

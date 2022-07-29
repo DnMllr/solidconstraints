@@ -684,7 +684,10 @@ const enterInIntersectionMode = (
 };
 
 const onUIHoverElement = (currentAction: Action, target: string): Action => {
-  if (currentAction.kind === ActionKind.Selecting) {
+  if (
+    currentAction.kind === ActionKind.Selecting ||
+    currentAction.kind === ActionKind.UIHoveringElementWhileSelecting
+  ) {
     return {
       ...currentAction,
       kind: ActionKind.UIHoveringElementWhileSelecting,

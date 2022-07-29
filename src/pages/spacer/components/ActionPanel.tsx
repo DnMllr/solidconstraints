@@ -2,7 +2,6 @@ import {
   Box,
   Divider,
   HStack,
-  ListIcon,
   ListItem,
   Text,
   UnorderedList,
@@ -13,21 +12,19 @@ import {
   Component,
   createMemo,
   For,
-  Match,
   ParentComponent,
   Show,
-  Switch,
 } from "solid-js";
 import {
+  Action,
   ActionKind,
   draggedElements,
   hoveredElements,
-  lookupActionKind,
   selectedElements,
 } from "../lib/actions";
 
 import { InteractionCtrl } from "../lib/interactor";
-import { Geometry, Kind, SceneReader } from "../lib/scene";
+import { Direction, Kind, SceneReader } from "../lib/scene";
 import { IDBadge } from "./IDBadge";
 
 export interface ActionPanelProps {
@@ -39,107 +36,98 @@ export const ActionPanel: Component<ActionPanelProps> = ({
   interactor,
   scene,
 }) => {
-  return (
-    <Box>
-      <ActionDescription interactor={interactor} scene={scene} />
-    </Box>
-  );
-};
-
-export interface ActionDescriptionProps {
-  interactor: InteractionCtrl;
-  scene: SceneReader;
-}
-
-const ActionDescription: Component<ActionDescriptionProps> = ({
-  interactor,
-  scene,
-}) => {
-  const actionKind = () => interactor.action().kind;
-  const hovered = createMemo(() =>
-    hoveredElements(interactor.action()).map(scene.lookup)
-  );
-  const selected = createMemo(() =>
-    selectedElements(interactor.action()).map(scene.lookup)
-  );
-  const dragged = createMemo(() =>
-    draggedElements(interactor.action()).map(scene.lookup)
-  );
-  const actionName = createMemo(() =>
-    lookupActionKind(actionKind())
-      .replace(/([A-Z])/g, " $1")
-      .trim()
+  const actionKind = createMemo(() => interactor.action().kind);
+  const actionTitle = createMemo(() =>
+    ActionKind[actionKind()].replace(/([A-Z])/g, " $1").trim()
   );
 
-  const actionIs = (kind: ActionKind) => actionKind() === kind;
+  const isActiveAction = createMemo(() => {
+    switch (actionKind()) {
+      case ActionKind.None:
+      case ActionKind.Interacting:
+      case ActionKind.Selecting:
+      case ActionKind.CreateLine:
+      case ActionKind.CreateIntersection:
+      case ActionKind.UIHoveringElement:
+      case ActionKind.UIHoveringElementWhileSelecting:
+        return false;
+    }
+    return true;
+  });
+
+  const hovered = () => hoveredElements(interactor.action());
+  const selected = () => selectedElements(interactor.action());
+  const dragged = () => draggedElements(interactor.action());
+  const draggedPoints = () =>
+    dragged().filter((id) => scene.lookup(id).kind === Kind.Point);
 
   return (
-    <Switch>
-      <Match when={actionIs(ActionKind.Selecting)}>
-        <Action>
-          <ActionHeader>Selecting</ActionHeader>
-          <SelectionList selected={selected} interactor={interactor} />
-        </Action>
-      </Match>
-      {/* <Match when={actionIs(ActionKind.CreateLine)}></Match> */}
-    </Switch>
+    <VStack class="justify-between h-full !items-stretch">
+      <Box></Box>
+      <Show when={isActiveAction()}>
+        <ActionHeader>
+          <Text>{actionTitle()}</Text>
+          <HStack spacing="$2">
+            <Text>{renderPosition(interactor.action(), scene)}</Text>
+            <Show when={dragged().length === 0}>
+              <For each={hovered()}>
+                {(id) => <IDBadge id={id} interactor={interactor} />}
+              </For>
+            </Show>
+            <Show when={draggedPoints().length === 0}>
+              <For each={dragged()}>
+                {(id) => <IDBadge id={id} interactor={interactor} />}
+              </For>
+            </Show>
+            <For each={draggedPoints()}>
+              {(id) => <IDBadge id={id} interactor={interactor} />}
+            </For>
+          </HStack>
+        </ActionHeader>
+      </Show>
+    </VStack>
   );
 };
 
 const ActionHeader: ParentComponent = ({ children }) => (
-  <VStack alignItems="flex-start" class="mb-4">
-    <Text class="p-4">{children}</Text>
+  <VStack alignItems="stretch">
     <Divider />
+    <HStack class="p-4 justify-between">{children}</HStack>
   </VStack>
 );
 
-const Action: ParentComponent = ({ children }) => (
-  <VStack alignItems="flex-start w-full h-full">{children}</VStack>
-);
+const renderPosition = (action: Action, scene: SceneReader) => {
+  switch (action.kind) {
+    case ActionKind.PlacingLine: {
+      switch (action.direction) {
+        case Direction.Horizontal: {
+          return `Y: ${action.y}`;
+        }
 
-interface SelectionListProps {
-  selected: Accessor<Geometry[]>;
-  interactor: InteractionCtrl;
-}
-
-const SelectionList: Component<SelectionListProps> = ({
-  selected,
-  interactor,
-}) => {
-  const selectedElementsByKind = createMemo(() => {
-    const group = {
-      [Kind.Line]: [],
-      [Kind.Point]: [],
-      [Kind.Segment]: [],
-      [Kind.Ring]: [],
-      [Kind.Poly]: [],
-    };
-
-    for (const el of selected()) {
-      group[el.kind].push(el);
+        case Direction.Vertical: {
+          return `X: ${action.x}`;
+        }
+      }
     }
 
-    return group;
-  });
+    case ActionKind.DraggingLine: {
+      const line = scene.lines()[action.dragged.line];
+      switch (line.direction) {
+        case Direction.Horizontal: {
+          return `Y: ${action.y}`;
+        }
 
-  return (
-    <UnorderedList class="px-4">
-      <For each={Object.entries(selectedElementsByKind())}>
-        {([kind, els]) => (
-          <Show when={els.length > 0}>
-            <ListItem>
-              <Text>
-                <HStack spacing="$1">
-                  <h4 class="inline">{Kind[kind]}s</h4>:{" "}
-                  <For each={els}>
-                    {(el) => <IDBadge id={el.id} interactor={interactor} />}
-                  </For>
-                </HStack>
-              </Text>
-            </ListItem>
-          </Show>
-        )}
-      </For>
-    </UnorderedList>
-  );
+        case Direction.Vertical: {
+          return `X: ${action.x}`;
+        }
+      }
+    }
+
+    case ActionKind.DraggingIntersection:
+    case ActionKind.PlacingIntersection: {
+      return `${action.x} ${action.y}`;
+    }
+  }
+
+  return "";
 };
