@@ -82,7 +82,7 @@ interface HasPoint {
 
 type HasCoordinates = HasX & HasY;
 
-interface NonInteractingAction extends HasActionKind<ActionKind.None> {}
+type NonInteractingAction = HasActionKind<ActionKind.None>;
 
 interface InteractingAction
   extends HasActionKind<ActionKind.Interacting>,
@@ -269,6 +269,8 @@ export type Action =
   | UIHoveringElementAction
   | UIHoveringElementWhileSelectingAction;
 
+// TODO(Dan) deprecate everything under this line.
+
 export const getXPosition = (action: Action): number | undefined => {
   if ("x" in action) {
     return action.x;
@@ -305,18 +307,6 @@ export const draggedElements = (action: Action): string[] => {
   return collectByActionKey("dragged", action);
 };
 
-export const isElementHovered = (id: string, action: Action): boolean => {
-  return containsByActionKey("hovered", id, action);
-};
-
-export const isElementDragged = (id: string, action: Action): boolean => {
-  return containsByActionKey("dragged", id, action);
-};
-
-export const isElementSelected = (id: string, action: Action): boolean => {
-  return containsByActionKey("selected", id, action);
-};
-
 export const isReferencedByAction = (id: string, action: Action): boolean => {
   return deepContains(
     id,
@@ -336,21 +326,9 @@ const collectByActionKey = (
   return [];
 };
 
-const containsByActionKey = (
-  key: "hovered" | "dragged" | "selected",
-  target: string,
-  action: Action
-): boolean => {
-  if (key in action) {
-    return deepContains(target, keyWhitelist, action[key]);
-  }
-
-  return false;
-};
-
 const keyWhitelist = ["point", "points", "line", "lines"];
 
-const deepCollect = (validKeys: string[], obj: any): string[] => {
+const deepCollect = (validKeys: string[], obj: unknown): string[] => {
   if (!obj) {
     return [];
   }
@@ -360,15 +338,15 @@ const deepCollect = (validKeys: string[], obj: any): string[] => {
   }
 
   if (Array.isArray(obj)) {
-    const results = [];
+    const results: string[] = [];
     for (const item of obj) {
-      results.push(...deepCollect(validKeys, item));
+      results.push(...deepCollect(validKeys, item as unknown));
     }
     return results;
   }
 
   if (typeof obj === "object") {
-    const results = [];
+    const results: string[] = [];
     for (const key of validKeys) {
       results.push(...deepCollect(validKeys, obj[key]));
     }
@@ -381,7 +359,7 @@ const deepCollect = (validKeys: string[], obj: any): string[] => {
 const deepContains = (
   target: string,
   validKeys: string[],
-  obj: any
+  obj: unknown
 ): boolean => {
   if (!obj) {
     return false;

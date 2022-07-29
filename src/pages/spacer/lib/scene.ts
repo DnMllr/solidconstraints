@@ -2,7 +2,6 @@ import Flatten from "@flatten-js/core";
 import { nanoid } from "nanoid";
 import { createMemo } from "solid-js";
 import { createStore, produce, SetStoreFunction } from "solid-js/store";
-import { loadEnv } from "vite";
 import { Action, ActionKind, HasSelections } from "./actions";
 
 const ArbitrarilyBig = 9999999999999;
@@ -18,16 +17,18 @@ export interface Position {
 }
 
 class Identifier {
-  cache: RecordOf<string> = {};
+  cache: RecordOf<string | undefined> = {};
 
   next(key: string): string {
-    if (this.cache[key] != null) {
-      return this.cache[key];
+    let id = this.cache[key];
+    if (id !== undefined) {
+      return id;
     }
 
-    this.cache[key] = nanoid(6);
+    id = nanoid(6);
+    this.cache[key] = id;
 
-    return this.cache[key];
+    return id;
   }
 }
 
@@ -182,7 +183,7 @@ const squaredPolar = (point: Flatten.Point, center: Flatten.Point) => {
 };
 
 const polySort = (points: Flatten.Point[]): Flatten.Point[] => {
-  let center = point(
+  const center = point(
     points.reduce((sum, p) => sum + p.x, 0) / points.length,
     points.reduce((sum, p) => sum + p.y, 0) / points.length
   );
@@ -221,10 +222,8 @@ const createPolys = (
     const poly = new Flatten.Polygon(
       polySort(rings[p.exterior].points.map((p) => points[p].geom))
     );
-    for (let holeID of p.holes) {
-      poly.addFace(
-        polySort(rings[p.exterior].points.map((p) => points[holeID].geom))
-      );
+    for (const holeID of p.holes) {
+      poly.addFace(polySort(rings[holeID].points.map((p) => points[p].geom)));
     }
     return poly;
   });
@@ -283,7 +282,7 @@ const createSceneReader = (
   const hit = (x: number, y: number): Geometry[] => {
     const shapes = all();
     const find = (shape: Flatten.IndexableElement): Geometry => {
-      for (let key in shapes) {
+      for (const key in shapes) {
         if (shapes[key].geom === shape) {
           return shapes[key];
         }
@@ -321,7 +320,9 @@ const createSceneWriter = (
     const v = Math.round(value);
     const key = `line:x:${v}`;
     const id = ids.next(key);
-    if (reader.lines()[id] != null) {
+
+    /* eslint-disable @typescript-eslint/no-unnecessary-condition -- typescript is being too generous here and the linter can't see that we may have a cache miss */
+    if (reader.lines()[id]) {
       return id;
     }
 
@@ -333,7 +334,7 @@ const createSceneWriter = (
     };
 
     set(
-      produce((s) => {
+      produce((s: BaseScene) => {
         s.lines[id] = line;
         s.grid.xs.push(id);
         s.grid.xs.sort((a, b) => s.lines[a].v - s.lines[b].v);
@@ -346,8 +347,8 @@ const createSceneWriter = (
   const dragHorizontalLine = (id: string, y: number, grid?: Position) => {
     set(
       "lines",
-      produce((lines) => {
-        const offset = grid?.y || 1;
+      produce((lines: RecordOf<Line>) => {
+        const offset = grid?.y ?? 1;
         const linesInOrder = reader.grid().xs.map((id) => lines[id]);
         const index = linesInOrder.findIndex((l) => l.id === id);
         let dependentLines = linesInOrder.slice(0, index);
@@ -357,7 +358,7 @@ const createSceneWriter = (
         lines[id].v = currentY;
         currentY -= offset;
 
-        for (let line of dependentLines) {
+        for (const line of dependentLines) {
           if (line.v > currentY) {
             lines[line.id].v = currentY;
             currentY -= offset;
@@ -368,7 +369,7 @@ const createSceneWriter = (
 
         currentY = y + offset;
 
-        for (let line of dependentLines) {
+        for (const line of dependentLines) {
           if (line.v < currentY) {
             lines[line.id].v = currentY;
             currentY += offset;
@@ -382,6 +383,8 @@ const createSceneWriter = (
     const v = Math.round(value);
     const key = `line:y:${v}`;
     const id = ids.next(key);
+
+    /* eslint-disable @typescript-eslint/no-unnecessary-condition -- typescript is being too generous here and the linter can't see that we may have a cache miss */
     if (reader.lines()[id] != null) {
       return id;
     }
@@ -394,7 +397,7 @@ const createSceneWriter = (
     };
 
     set(
-      produce((s) => {
+      produce((s: BaseScene) => {
         s.lines[id] = line;
         s.grid.ys.push(id);
         s.grid.ys.sort((a, b) => s.lines[a].v - s.lines[b].v);
@@ -407,8 +410,8 @@ const createSceneWriter = (
   const dragVerticalLine = (id: string, x: number, grid?: Position) => {
     set(
       "lines",
-      produce((lines) => {
-        const offset = grid?.x || 1;
+      produce((lines: RecordOf<Line>) => {
+        const offset = grid?.x ?? 1;
         const linesInOrder = reader.grid().ys.map((id) => lines[id]);
         const index = linesInOrder.findIndex((l) => l.id === id);
         let dependentLines = linesInOrder.slice(0, index);
@@ -418,7 +421,7 @@ const createSceneWriter = (
         lines[id].v = currentX;
         currentX -= offset;
 
-        for (let line of dependentLines) {
+        for (const line of dependentLines) {
           if (line.v > currentX) {
             lines[line.id].v = currentX;
             currentX -= offset;
@@ -429,7 +432,7 @@ const createSceneWriter = (
 
         currentX = x + offset;
 
-        for (let line of dependentLines) {
+        for (const line of dependentLines) {
           if (line.v < currentX) {
             lines[line.id].v = currentX;
             currentX += offset;
@@ -442,7 +445,8 @@ const createSceneWriter = (
   const createIntersection = (x: string, y: string): string => {
     const key = `intersection:${x}:${y}`;
     const id = ids.next(key);
-    if (reader.points()[id] != null) {
+    /* eslint-disable @typescript-eslint/no-unnecessary-condition -- typescript is being too generous here and the linter can't see that we may have a cache miss */
+    if (reader.points()[id]) {
       return id;
     }
 
@@ -461,9 +465,9 @@ const createSceneWriter = (
   const applyGrid = ({ x, y }: Position) => {
     set(
       "lines",
-      produce((lines) => {
+      produce((lines: RecordOf<Line>) => {
         let min = 0;
-        for (let id of reader.grid().xs) {
+        for (const id of reader.grid().xs) {
           const el = lines[id];
           el.v /= y;
           el.v = Math.round(el.v);
@@ -473,7 +477,7 @@ const createSceneWriter = (
         }
 
         min = 0;
-        for (let id of reader.grid().ys) {
+        for (const id of reader.grid().ys) {
           const el = lines[id];
           el.v /= x;
           el.v = Math.round(el.v);
@@ -562,18 +566,22 @@ const createSceneWriter = (
         }
 
         case ActionKind.CreateIntersectionAtIntersection: {
-          const lines = {};
+          const lines: Partial<{ [key in Direction]: GeoLine}> = {};
 
           for (const lineID of action.hovered.lines) {
             const line = reader.lines()[lineID];
             lines[line.direction] = line;
           }
 
-          createIntersection(
-            lines[Direction.Horizontal].id,
-            lines[Direction.Vertical].id
-          );
+          const x = lines[Direction.Horizontal]?.id; 
+          const y = lines[Direction.Vertical]?.id; 
 
+          if (x === undefined || y === undefined) {
+            console.error('malformed action: CreateIntersectionAtIntersection was missing both a horizontal and vertical line');
+            return;
+          }
+
+          createIntersection(x, y);
           return;
         }
 

@@ -32,19 +32,19 @@ export const Controls: Component<ControlsProps> = ({ ctrl }) => {
   const leftButtons: IconButtonProps[] = [
     {
       label: "enter point mode",
-      onClick: ctrl.togglePointMode,
+      onClick: () => ctrl.togglePointMode(),
       targetMode: Mode.Point,
       icon: <Asterisk />,
     },
     {
       label: "enter horizontal line mode",
-      onClick: ctrl.toggleHorizontalLineMode,
+      onClick: () => ctrl.toggleHorizontalLineMode(),
       targetMode: Mode.HorizontalLine,
       icon: <LineSideways />,
     },
     {
       label: "enter vertical line mode",
-      onClick: ctrl.toggleVerticalLineMode,
+      onClick: () => ctrl.toggleVerticalLineMode(),
       targetMode: Mode.VerticalLine,
       icon: <LineUp />,
     },
@@ -136,7 +136,7 @@ const GridControls: Component<ControlsProps> = ({ ctrl }) => {
 const InspectorButton: Component<ControlsProps> = ({ ctrl }) => (
   <IconButton
     _focus={{ boxShadow: "none" }}
-    onClick={ctrl.toggleInspector}
+    onClick={() => ctrl.toggleInspector()}
     icon={ctrl.controls.inspectorOpen ? <MagnifyMinus /> : <MagnifyPlus />}
     variant={ctrl.controls.inspectorOpen ? "solid" : "ghost"}
     aria-label="enter x axis line mode"

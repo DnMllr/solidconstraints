@@ -6,7 +6,6 @@ import {
   AccordionItem,
   AccordionPanel,
   Box,
-  Divider,
   HStack,
   VStack,
   Text,
@@ -72,7 +71,7 @@ interface ElementAccordionProps<T> {
   children: (item: T) => JSX.Element;
 }
 
-const ElementAccordion = <T extends {}>({
+const ElementAccordion = <T,>({
   itemsFrom,
   title,
   children,

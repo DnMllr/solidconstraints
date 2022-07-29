@@ -28,7 +28,10 @@ export const Viewport: ParentComponent<ViewportProps> = ({
   const bounds = useViewportBounds();
 
   createEffect(() => {
-    render(scene, interactor.action(), el(), bounds.width, bounds.height);
+    const element = el();
+    if (element != null) {
+      render(scene, interactor.action(), element, bounds.width, bounds.height);
+    }
   });
 
   createEffect(() => {
@@ -76,7 +79,7 @@ export const Viewport: ParentComponent<ViewportProps> = ({
     });
   };
 
-  const onMouseLeave = (e: MouseEvent) => {
+  const onMouseLeave = () => {
     batch(() => {
       scene.updateWithAction(
         interactor.viewport.onMouseLeave(),

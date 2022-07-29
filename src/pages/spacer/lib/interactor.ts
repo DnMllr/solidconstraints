@@ -1,10 +1,5 @@
 import { createSignal } from "solid-js";
-import {
-  Action,
-  ActionKind,
-  isElementSelected,
-  lookupActionKind,
-} from "./actions";
+import { Action, ActionKind, lookupActionKind } from "./actions";
 import { ControlsCtrl, ControlsState, Mode } from "./controls";
 import {
   Direction,
@@ -30,8 +25,8 @@ export const createInteractor = (
     },
 
     viewport: {
-      onMouseDown(e: MouseEvent) {
-        return setAction((a) => onMouseDown(a, scene, e));
+      onMouseDown() {
+        return setAction((a) => onMouseDown(a));
       },
 
       onMouseUp(e: MouseEvent) {
@@ -116,11 +111,8 @@ const onEscape = (
   controls: ControlsState
 ): Action => computeEscapeAction(currentAction, scene, controls);
 
-const onMouseDown = (
-  currentAction: Action,
-  scene: SceneReader,
-  position: Position
-): Action => computeMouseDownAction(currentAction, scene, position);
+const onMouseDown = (currentAction: Action): Action =>
+  computeMouseDownAction(currentAction);
 
 const onMouseUp = (
   currentAction: Action,
@@ -365,11 +357,7 @@ const computeMouseMoveAction = (
   return currentAction;
 };
 
-const computeMouseDownAction = (
-  currentAction: Action,
-  scene: SceneReader,
-  { x, y }: Position
-): Action => {
+const computeMouseDownAction = (currentAction: Action): Action => {
   switch (currentAction.kind) {
     case ActionKind.HoveringLine: {
       return {
@@ -901,7 +889,7 @@ const isInIntersectionMode = ({ mode }: ControlsState) => mode === Mode.Point;
 const isInNoneMode = ({ mode }: ControlsState) => mode === Mode.None;
 
 const firstPoint = (elements: Geometry[]): GeoPoint | undefined => {
-  for (let el of elements) {
+  for (const el of elements) {
     if (el.kind === Kind.Point) {
       return el;
     }
@@ -909,7 +897,7 @@ const firstPoint = (elements: Geometry[]): GeoPoint | undefined => {
 };
 
 const firstLine = (elements: Geometry[]): GeoLine | undefined => {
-  for (let el of elements) {
+  for (const el of elements) {
     if (el.kind === Kind.Line) {
       return el;
     }
@@ -917,7 +905,7 @@ const firstLine = (elements: Geometry[]): GeoLine | undefined => {
 };
 
 const firstVerticalLine = (elements: Geometry[]): GeoLine | undefined => {
-  for (let el of elements) {
+  for (const el of elements) {
     if (el.kind === Kind.Line && el.direction === Direction.Vertical) {
       return el;
     }
@@ -925,7 +913,7 @@ const firstVerticalLine = (elements: Geometry[]): GeoLine | undefined => {
 };
 
 const firstHorizontalLine = (elements: Geometry[]): GeoLine | undefined => {
-  for (let el of elements) {
+  for (const el of elements) {
     if (el.kind === Kind.Line && el.direction === Direction.Horizontal) {
       return el;
     }
@@ -933,7 +921,7 @@ const firstHorizontalLine = (elements: Geometry[]): GeoLine | undefined => {
 };
 
 const highestPriorityElement = (elements: Geometry[]): Geometry | undefined => {
-  return firstPoint(elements) || firstLine(elements);
+  return firstPoint(elements) ?? firstLine(elements);
 };
 
 const intersectionHits = (
@@ -951,7 +939,7 @@ const intersectionHits = (
     return undefined;
   }
 
-  const result = [];
+  const result: GeoLine[] = [];
 
   if (v != null) {
     result.push(v);

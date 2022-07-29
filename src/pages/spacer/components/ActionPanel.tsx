@@ -1,22 +1,5 @@
-import {
-  Box,
-  Button,
-  Divider,
-  HStack,
-  ListItem,
-  Text,
-  UnorderedList,
-  VStack,
-} from "@hope-ui/solid";
-import {
-  Accessor,
-  Component,
-  createEffect,
-  createMemo,
-  For,
-  ParentComponent,
-  Show,
-} from "solid-js";
+import { Box, Button, Divider, HStack, Text, VStack } from "@hope-ui/solid";
+import { Component, createMemo, For, ParentComponent, Show } from "solid-js";
 import { Portal } from "solid-js/web";
 import {
   Action,
@@ -59,15 +42,15 @@ export const ActionPanel: Component<ActionPanelProps> = ({
   const hovered = () => hoveredElements(interactor.action());
   const dragged = () => draggedElements(interactor.action());
   const draggedPoints = () =>
-    dragged().filter((id) => scene.lookup(id).kind === Kind.Point);
+    dragged().filter((id) => scene.lookup(id)?.kind === Kind.Point);
 
   const selected = () => selectedElements(interactor.action());
   const selectedLines = () =>
-    selected().filter((id) => scene.lookup(id).kind === Kind.Line);
+    selected().filter((id) => scene.lookup(id)?.kind === Kind.Line);
   const selectedVerticalLines = createMemo(() => {
     return selectedLines().filter((id) => {
       const line = scene.lookup(id);
-      if (line.kind === Kind.Line) {
+      if (line?.kind === Kind.Line) {
         return line.direction === Direction.Vertical;
       }
 
@@ -77,7 +60,7 @@ export const ActionPanel: Component<ActionPanelProps> = ({
   const selectedHorizontalLines = createMemo(() => {
     return selectedLines().filter((id) => {
       const line = scene.lookup(id);
-      if (line.kind === Kind.Line) {
+      if (line?.kind === Kind.Line) {
         return line.direction === Direction.Horizontal;
       }
 
@@ -85,7 +68,7 @@ export const ActionPanel: Component<ActionPanelProps> = ({
     });
   });
   const selectedPoints = createMemo(() =>
-    selected().filter((id) => scene.lookup(id).kind === Kind.Point)
+    selected().filter((id) => scene.lookup(id)?.kind === Kind.Point)
   );
 
   const createActions = createMemo(() => {
@@ -125,6 +108,11 @@ export const ActionPanel: Component<ActionPanelProps> = ({
   const distance = (description: string, left: string, right: string) => {
     const a = scene.lookup(left);
     const b = scene.lookup(right);
+
+    if (a == null || b == null) {
+      throw new Error("Invalid IDs are passed");
+    }
+
     return {
       description,
       leftID: a.id,

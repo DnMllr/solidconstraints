@@ -31,10 +31,10 @@ export interface ControlsCtrl {
 }
 
 export const createControls = (): ControlsCtrl => {
-  const [controls, setControls] = createStore({
+  const [controls, setControls] = createStore<ControlsState>({
     inspectorOpen: false,
     mode: Mode.None,
-    grid: null,
+    grid: undefined,
   });
 
   return {
@@ -43,7 +43,7 @@ export const createControls = (): ControlsCtrl => {
       setControls("grid", { x, y });
     },
     unsetGrid() {
-      setControls("grid", null);
+      setControls("grid", undefined);
     },
     openInspector() {
       setControls("inspectorOpen", true);

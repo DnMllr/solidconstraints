@@ -1,6 +1,24 @@
 image: "node:latest"
 
-pages:
+stages:
+  - test
+  - deploy
+
+check types:
+  stage: test
+  script:
+    - npm i -g pnpm
+    - pnpm install
+    - pnpm run typecheck
+
+run linter:
+  stage: test
+  script:
+    - npm i -g pnpm
+    - pnpm install
+    - pnpm run lint
+
+deploy gitlab pages:
   stage: deploy
   script:
     - npm i -g pnpm

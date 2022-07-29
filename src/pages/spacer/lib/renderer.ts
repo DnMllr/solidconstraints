@@ -1,4 +1,4 @@
-import { Direction, Kind, Position, SceneReader } from "./scene";
+import { Direction, GeoLine, Kind, Position, SceneReader } from "./scene";
 import rough from "roughjs";
 import { RoughCanvas } from "roughjs/bin/canvas";
 import { Options } from "roughjs/bin/core";
@@ -196,7 +196,7 @@ const draw = {
       except?: Set<string>
     ) {
       for (const line of Object.values(scene.lines())) {
-        if (except && except.has(line.id)) {
+        if (except?.has(line.id)) {
           continue;
         }
 
@@ -274,7 +274,7 @@ const draw = {
   point: {
     all(rc: RoughCanvas, scene: SceneReader, except?: Set<string>) {
       for (const point of Object.values(scene.points())) {
-        if (except && except.has(point.id)) {
+        if (except?.has(point.id)) {
           continue;
         }
 
@@ -356,7 +356,13 @@ export const render = (
   width: number,
   height: number
 ) => {
-  el.getContext("2d").clearRect(0, 0, width, height);
+  const ctx = el.getContext("2d");
+  if (!ctx) {
+    throw new Error("browser is too old");
+  }
+
+  ctx.clearRect(0, 0, width, height);
+
   const rc = rough.canvas(el);
   draw.canvas.axis(rc, width, height);
   draw.canvas.mouseTicks(rc, action, height);
@@ -548,7 +554,7 @@ const renderAction = (
 
     case ActionKind.PlacingIntersectionAtIntersection: {
       const drawn = new Set<string>();
-      const axis = {};
+      const axis: Partial<{ [key in Direction]: GeoLine }> = {};
 
       for (const id of action.hovered.lines) {
         const line = lines[id];
@@ -557,11 +563,17 @@ const renderAction = (
         draw.lines.hovering(rc, line.geom, width, height);
       }
 
-      draw.point.insert(rc, {
-        x: axis[Direction.Vertical].geom.start.x,
-        y: axis[Direction.Horizontal].geom.start.y,
-      });
+      const x = axis[Direction.Vertical]?.geom.start.x;
+      const y = axis[Direction.Horizontal]?.geom.start.y;
 
+      if (x === undefined || y === undefined) {
+        console.error(
+          "malformed action, PlacingIntersectionAtIntersection did not have both a horizontal and vertical line"
+        );
+        return;
+      }
+
+      draw.point.insert(rc, { x, y });
       draw.all.all(rc, scene, width, height, drawn);
       return;
     }
@@ -635,6 +647,10 @@ const renderAction = (
 
       const el = scene.lookup(action.hovered);
 
+      if (!el) {
+        throw new Error("");
+      }
+
       switch (el.kind) {
         case Kind.Line: {
           draw.lines.hovering(rc, el.geom, width, height);
@@ -653,6 +669,12 @@ const renderAction = (
     case ActionKind.UIHoveringElementWhileSelecting: {
       const drawn = new Set<string>([action.hovered]);
       const el = scene.lookup(action.hovered);
+      if (!el) {
+        console.error(
+          `malformed action: missing hovered element of id [${action.hovered}]`
+        );
+        return;
+      }
 
       switch (el.kind) {
         case Kind.Line: {
@@ -678,6 +700,13 @@ const renderAction = (
         if (!drawn.has(id)) {
           drawn.add(id);
           const el = scene.lookup(id);
+
+          if (!el) {
+            console.error(
+              `malformed action: missing selected element of id [${id}]`
+            );
+            return;
+          }
 
           switch (el.kind) {
             case Kind.Line: {
