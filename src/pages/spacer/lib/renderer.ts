@@ -352,6 +352,8 @@ const renderAction = (
 
     case ActionKind.CreateLine:
     case ActionKind.CreateIntersection:
+    case ActionKind.CreateIntersectionAlongLine:
+    case ActionKind.CreateIntersectionAtIntersection:
     case ActionKind.Interacting: {
       finishScene(rc, scene, width, height);
       return;

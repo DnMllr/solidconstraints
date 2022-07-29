@@ -1,4 +1,3 @@
-import Flatten from "@flatten-js/core";
 import { createSignal } from "solid-js";
 import { Action, ActionKind, lookupActionKind } from "./actions";
 import { ControlsCtrl, ControlsState, Mode } from "./controls";
@@ -27,7 +26,7 @@ export const createInteractor = (
 
     viewport: {
       onMouseDown(e: MouseEvent) {
-        return setAction(onMouseDown);
+        return setAction((a) => onMouseDown(a, scene, e));
       },
 
       onMouseUp(e: MouseEvent) {
@@ -112,8 +111,11 @@ const onEscape = (
   controls: ControlsState
 ): Action => computeEscapeAction(currentAction, scene, controls);
 
-const onMouseDown = (currentAction: Action): Action =>
-  computeMouseDownAction(currentAction);
+const onMouseDown = (
+  currentAction: Action,
+  scene: SceneReader,
+  position: Position
+): Action => computeMouseDownAction(currentAction, scene, position);
 
 const onMouseUp = (
   currentAction: Action,
@@ -121,7 +123,12 @@ const onMouseUp = (
   controls: ControlsState,
   e: MouseEvent
 ): Action =>
-  computeMouseUpAction(currentAction, scene, computePosition(controls, e));
+  computeMouseUpAction(
+    currentAction,
+    scene,
+    controls,
+    computePosition(controls, e)
+  );
 
 const onMouseEnter = (
   currentAction: Action,
@@ -200,6 +207,8 @@ const computeMouseMoveAction = (
     case ActionKind.HoveringLine:
     case ActionKind.PlacingIntersection:
     case ActionKind.CreateIntersection:
+    case ActionKind.CreateIntersectionAlongLine:
+    case ActionKind.CreateIntersectionAtIntersection:
     case ActionKind.CreateLine:
     case ActionKind.PlacingIntersectionAlongLine:
     case ActionKind.PlacingIntersectionAtIntersection:
@@ -295,7 +304,11 @@ const computeMouseMoveAction = (
   return currentAction;
 };
 
-const computeMouseDownAction = (currentAction: Action): Action => {
+const computeMouseDownAction = (
+  currentAction: Action,
+  scene: SceneReader,
+  { x, y }: Position
+): Action => {
   switch (currentAction.kind) {
     case ActionKind.HoveringLine: {
       return {
@@ -318,6 +331,7 @@ const computeMouseDownAction = (currentAction: Action): Action => {
 const computeMouseUpAction = (
   currentAction: Action,
   scene: SceneReader,
+  controls: ControlsState,
   { x, y }: Position
 ): Action => {
   switch (currentAction.kind) {
@@ -352,10 +366,38 @@ const computeMouseUpAction = (
       };
     }
 
+    case ActionKind.PlacingIntersection: {
+      return {
+        kind: ActionKind.CreateIntersection,
+        x,
+        y,
+      };
+    }
+
     case ActionKind.PlacingIntersectionAlongLine: {
-      return createCreateIntersectionAction(scene, { x, y }, [
-        currentAction.hovered.line,
-      ]);
+      return {
+        kind: ActionKind.CreateIntersectionAlongLine,
+        hovered: {
+          ...currentAction.hovered,
+        },
+        x,
+        y,
+      };
+    }
+
+    case ActionKind.PlacingIntersectionAtIntersection: {
+      return {
+        kind: ActionKind.CreateIntersectionAtIntersection,
+        hovered: {
+          ...currentAction.hovered,
+        },
+      };
+    }
+
+    case ActionKind.CreateIntersectionAlongLine:
+    case ActionKind.CreateIntersectionAtIntersection:
+    case ActionKind.CreateIntersection: {
+      return computeEnterAction(currentAction, scene, controls, { x, y });
     }
 
     case ActionKind.PlacingIntersectionAtIntersection: {
@@ -364,10 +406,6 @@ const computeMouseUpAction = (
         { x, y },
         currentAction.hovered.lines
       );
-    }
-
-    case ActionKind.PlacingIntersection: {
-      return createCreateIntersectionAction(scene, { x, y }, []);
     }
 
     case ActionKind.DraggingLine: {

@@ -6,6 +6,8 @@ export enum ActionKind {
   Selecting,
   CreateLine,
   CreateIntersection,
+  CreateIntersectionAlongLine,
+  CreateIntersectionAtIntersection,
   PlacingLine,
   HoveringLine,
   HoveringLineWhileSelecting,
@@ -142,6 +144,15 @@ interface CreateIntersectionAction
   extends HasActionKind<ActionKind.CreateIntersection>,
     HasCoordinates {}
 
+interface CreateIntersectionAlongLineAction
+  extends HasActionKind<ActionKind.CreateIntersectionAlongLine>,
+    HasHovered<HasLine>,
+    HasCoordinates {}
+
+interface CreateIntersectionAlongIntersectionAction
+  extends HasActionKind<ActionKind.CreateIntersectionAtIntersection>,
+    HasHovered<HasLines> {}
+
 interface PlacingIntersectionAtIntersectionAction
   extends HasActionKind<ActionKind.PlacingIntersectionAtIntersection>,
     HasHovered<HasLines>,
@@ -161,6 +172,8 @@ export type Action =
   | InteractingAction
   | SelectingAction
   | CreateLineAction
+  | CreateIntersectionAlongLineAction
+  | CreateIntersectionAlongIntersectionAction
   | HoveringLineWhileSelectingAction
   | HoveringIntersectionWhileSelectingAction
   | TouchingLineAction

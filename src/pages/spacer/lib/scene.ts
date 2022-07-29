@@ -509,6 +509,38 @@ const createSceneWriter = (
           return;
         }
 
+        case ActionKind.CreateIntersectionAlongLine: {
+          const line = reader.lines()[action.hovered.line];
+
+          switch (line.direction) {
+            case Direction.Vertical: {
+              createIntersection(createHorizontalLine(action.y), line.id);
+              return;
+            }
+
+            case Direction.Horizontal: {
+              createIntersection(line.id, createVerticalLine(action.x));
+              return;
+            }
+          }
+        }
+
+        case ActionKind.CreateIntersectionAtIntersection: {
+          const lines = {};
+
+          for (const lineID of action.hovered.lines) {
+            const line = reader.lines()[lineID];
+            lines[line.direction] = line;
+          }
+
+          createIntersection(
+            lines[Direction.Horizontal].id,
+            lines[Direction.Vertical].id
+          );
+
+          return;
+        }
+
         case ActionKind.DraggingLine: {
           const line = reader.lines()[action.dragged.line];
           switch (line.direction) {

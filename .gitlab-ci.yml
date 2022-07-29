@@ -1,12 +1,12 @@
 image: "node:latest"
 
 pages:
-    stage: deploy
-    script:
-        - npm i -g pnpm
-        - pnpm install
-        - pnpm run build
-        - mv ./dist ./public
-    artifacts:
-        paths:
-            - public
+  stage: deploy
+  script:
+    - npm i -g pnpm
+    - pnpm install
+    - pnpm run build
+    - mv ./dist ./public
+  artifacts:
+    paths:
+      - public
