@@ -11,19 +11,29 @@ export enum ActionKind {
   PlacingLine,
   HoveringLine,
   HoveringLineWhileSelecting,
+  HoveringSelectedLineWhileSelecting,
+  HoveringSelectedIntersectionWhileSelecting,
   TouchingLine,
+  TouchingLineWhileSelecting,
+  TouchingSelectedLineWhileSelecting,
   DraggingLine,
+  DraggingLineWhileSelecting,
+  DraggingIntersectionWhileSelecting,
   PlacingIntersection,
   PlacingIntersectionAtIntersection,
   PlacingIntersectionAlongLine,
   HoveringIntersection,
   TouchingIntersection,
+  TouchingIntersectionWhileSelecting,
+  TouchingSelectedIntersectionWhileSelecting,
   HoveringIntersectionWhileSelecting,
   DraggingIntersection,
-  DraggingSelection,
+  DraggingSelectionByPoint,
+  DraggingSelectionByLine,
 
   UIHoveringElement,
   UIHoveringElementWhileSelecting,
+  UIPlacingSegmentWhileSelecting,
 }
 
 interface HasActionKind<T extends ActionKind> {
@@ -98,8 +108,18 @@ interface HoveringLineWhileSelectingAction
     HasHovered<HasLine>,
     HasSelections {}
 
+interface HoveringSelectedLineWhileSelectingAction
+  extends HasActionKind<ActionKind.HoveringSelectedLineWhileSelecting>,
+    HasHovered<HasLine>,
+    HasSelections {}
+
 interface HoveringIntersectionWhileSelectingAction
   extends HasActionKind<ActionKind.HoveringIntersectionWhileSelecting>,
+    HasHovered<HasPoint>,
+    HasSelections {}
+
+interface HoveringSelectedIntersectionWhileSelectingAction
+  extends HasActionKind<ActionKind.HoveringSelectedIntersectionWhileSelecting>,
     HasHovered<HasPoint>,
     HasSelections {}
 
@@ -107,9 +127,26 @@ interface TouchingLineAction
   extends HasActionKind<ActionKind.TouchingLine>,
     HasHovered<HasLine> {}
 
+interface TouchingLineWhileSelectingAction
+  extends HasActionKind<ActionKind.TouchingLineWhileSelecting>,
+    HasHovered<HasLine>,
+    HasSelections {}
+
 interface DraggingLineAction
   extends HasActionKind<ActionKind.DraggingLine>,
     HasDragged<HasLine>,
+    HasCoordinates {}
+
+interface DraggingLineWhileSelectingAction
+  extends HasActionKind<ActionKind.DraggingLineWhileSelecting>,
+    HasDragged<HasLine>,
+    HasSelections,
+    HasCoordinates {}
+
+interface DraggingIntersectionWhileSelectingAction
+  extends HasActionKind<ActionKind.DraggingIntersectionWhileSelecting>,
+    HasDragged<HasPoint>,
+    HasSelections,
     HasCoordinates {}
 
 interface PlacingIntersectionAction
@@ -158,6 +195,38 @@ interface PlacingIntersectionAtIntersectionAction
     HasHovered<HasLines>,
     HasCoordinates {}
 
+interface TouchingSelectedIntersectionWhileSelectingAction
+  extends HasActionKind<ActionKind.TouchingSelectedIntersectionWhileSelecting>,
+    HasHovered<HasPoint>,
+    HasSelections {}
+
+interface TouchingIntersectionWhileSelectingAction
+  extends HasActionKind<ActionKind.TouchingIntersectionWhileSelecting>,
+    HasHovered<HasPoint>,
+    HasSelections {}
+
+interface TouchingSelectedLineWhileSelectingAction
+  extends HasActionKind<ActionKind.TouchingSelectedLineWhileSelecting>,
+    HasHovered<HasLine>,
+    HasSelections {}
+
+interface TouchingLineWhileSelectingAction
+  extends HasActionKind<ActionKind.TouchingLineWhileSelecting>,
+    HasHovered<HasLine>,
+    HasSelections {}
+
+interface DraggingSelectionByLineAction
+  extends HasActionKind<ActionKind.DraggingSelectionByLine>,
+    HasSelections,
+    HasHovered<HasLine>,
+    HasCoordinates {}
+
+interface DraggingSelectionByPointAction
+  extends HasActionKind<ActionKind.DraggingSelectionByPoint>,
+    HasSelections,
+    HasHovered<HasPoint>,
+    HasCoordinates {}
+
 interface UIHoveringElementAction
   extends HasActionKind<ActionKind.UIHoveringElement>,
     HasHovered<string> {}
@@ -175,17 +244,27 @@ export type Action =
   | CreateIntersectionAlongLineAction
   | CreateIntersectionAlongIntersectionAction
   | HoveringLineWhileSelectingAction
+  | HoveringSelectedIntersectionWhileSelectingAction
+  | HoveringSelectedLineWhileSelectingAction
   | HoveringIntersectionWhileSelectingAction
   | TouchingLineAction
+  | TouchingLineWhileSelectingAction
+  | TouchingIntersectionWhileSelectingAction
+  | TouchingSelectedLineWhileSelectingAction
   | HoveringLineAction
   | TouchingIntersectionAction
+  | TouchingSelectedIntersectionWhileSelectingAction
   | PlacingLineAction
   | PlacingIntersectionAction
   | PlacingIntersectionAlongLineAction
   | PlacingIntersectionAtIntersectionAction
   | HoveringIntersectionAction
   | DraggingLineAction
+  | DraggingLineWhileSelectingAction
   | DraggingIntersectionAction
+  | DraggingIntersectionWhileSelectingAction
+  | DraggingSelectionByPointAction
+  | DraggingSelectionByLineAction
   | CreateIntersectionAction
   | UIHoveringElementAction
   | UIHoveringElementWhileSelectingAction;

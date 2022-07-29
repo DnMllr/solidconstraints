@@ -7,7 +7,6 @@ import {
   ActionKind,
   getXPosition,
   getYPosition,
-  isElementSelected,
   selectedElements,
 } from "./actions";
 import Flatten from "@flatten-js/core";

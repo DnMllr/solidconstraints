@@ -28,6 +28,7 @@ export const Viewport: ParentComponent<ViewportProps> = ({
   const bounds = useViewportBounds();
 
   createEffect(() => {
+    interactor.debug();
     render(scene, interactor.action(), el(), bounds.width, bounds.height);
   });
 

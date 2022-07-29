@@ -1,5 +1,10 @@
 import { createSignal } from "solid-js";
-import { Action, ActionKind, lookupActionKind } from "./actions";
+import {
+  Action,
+  ActionKind,
+  isElementSelected,
+  lookupActionKind,
+} from "./actions";
 import { ControlsCtrl, ControlsState, Mode } from "./controls";
 import {
   Direction,
@@ -147,6 +152,12 @@ const onMouseLeave = (currentAction: Action): Action => {
   switch (currentAction.kind) {
     case ActionKind.Selecting:
     case ActionKind.HoveringIntersectionWhileSelecting:
+    case ActionKind.HoveringSelectedIntersectionWhileSelecting:
+    case ActionKind.HoveringSelectedLineWhileSelecting:
+    case ActionKind.DraggingIntersectionWhileSelecting:
+    case ActionKind.DraggingSelectionByLine:
+    case ActionKind.DraggingSelectionByPoint:
+    case ActionKind.DraggingLineWhileSelecting:
     case ActionKind.HoveringLineWhileSelecting: {
       return {
         kind: ActionKind.Selecting,
@@ -227,13 +238,10 @@ const computeMouseMoveAction = (
       };
     }
 
-    case ActionKind.DraggingLine: {
-      return { ...currentAction, x, y };
-    }
-
-    case ActionKind.TouchingLine: {
+    case ActionKind.TouchingLineWhileSelecting: {
       return {
-        kind: ActionKind.DraggingLine,
+        ...currentAction,
+        kind: ActionKind.DraggingLineWhileSelecting,
         dragged: {
           ...currentAction.hovered,
         },
@@ -242,8 +250,34 @@ const computeMouseMoveAction = (
       };
     }
 
-    case ActionKind.DraggingLine: {
-      return { ...currentAction, x, y };
+    case ActionKind.TouchingSelectedLineWhileSelecting: {
+      return {
+        ...currentAction,
+        kind: ActionKind.DraggingSelectionByLine,
+        x,
+        y,
+      };
+    }
+
+    case ActionKind.TouchingSelectedIntersectionWhileSelecting: {
+      return {
+        ...currentAction,
+        kind: ActionKind.DraggingSelectionByPoint,
+        x,
+        y,
+      };
+    }
+
+    case ActionKind.TouchingIntersectionWhileSelecting: {
+      return {
+        ...currentAction,
+        kind: ActionKind.DraggingIntersectionWhileSelecting,
+        dragged: {
+          ...currentAction.hovered,
+        },
+        x,
+        y,
+      };
     }
 
     case ActionKind.TouchingIntersection: {
@@ -260,17 +294,34 @@ const computeMouseMoveAction = (
       };
     }
 
+    case ActionKind.DraggingLine:
+    case ActionKind.DraggingLineWhileSelecting:
+    case ActionKind.DraggingSelectionByLine:
+    case ActionKind.DraggingSelectionByPoint:
+    case ActionKind.DraggingIntersectionWhileSelecting:
     case ActionKind.DraggingIntersection: {
       return { ...currentAction, x, y };
     }
 
     case ActionKind.HoveringLineWhileSelecting:
+    case ActionKind.HoveringSelectedLineWhileSelecting:
+    case ActionKind.HoveringSelectedIntersectionWhileSelecting:
     case ActionKind.HoveringIntersectionWhileSelecting:
     case ActionKind.Selecting: {
       const hit = highestPriorityElement(scene.hit(x, y));
       if (hit != null) {
         switch (hit.kind) {
           case Kind.Line: {
+            if (currentAction.selected.lines.includes(hit.id)) {
+              return {
+                ...currentAction,
+                kind: ActionKind.HoveringSelectedLineWhileSelecting,
+                hovered: {
+                  line: hit.id,
+                },
+              };
+            }
+
             return {
               ...currentAction,
               kind: ActionKind.HoveringLineWhileSelecting,
@@ -281,6 +332,16 @@ const computeMouseMoveAction = (
           }
 
           case Kind.Point: {
+            if (currentAction.selected.points.includes(hit.id)) {
+              return {
+                ...currentAction,
+                kind: ActionKind.HoveringSelectedIntersectionWhileSelecting,
+                hovered: {
+                  point: hit.id,
+                },
+              };
+            }
+
             return {
               ...currentAction,
               kind: ActionKind.HoveringIntersectionWhileSelecting,
@@ -317,10 +378,38 @@ const computeMouseDownAction = (
       };
     }
 
+    case ActionKind.HoveringLineWhileSelecting: {
+      return {
+        ...currentAction,
+        kind: ActionKind.TouchingLineWhileSelecting,
+      };
+    }
+
+    case ActionKind.HoveringSelectedLineWhileSelecting: {
+      return {
+        ...currentAction,
+        kind: ActionKind.TouchingSelectedLineWhileSelecting,
+      };
+    }
+
     case ActionKind.HoveringIntersection: {
       return {
         ...currentAction,
         kind: ActionKind.TouchingIntersection,
+      };
+    }
+
+    case ActionKind.HoveringIntersectionWhileSelecting: {
+      return {
+        ...currentAction,
+        kind: ActionKind.TouchingIntersectionWhileSelecting,
+      };
+    }
+
+    case ActionKind.HoveringSelectedIntersectionWhileSelecting: {
+      return {
+        ...currentAction,
+        kind: ActionKind.TouchingSelectedIntersectionWhileSelecting,
       };
     }
   }
@@ -338,7 +427,7 @@ const computeMouseUpAction = (
     case ActionKind.TouchingLine: {
       return {
         ...currentAction,
-        kind: ActionKind.HoveringLineWhileSelecting,
+        kind: ActionKind.HoveringSelectedLineWhileSelecting,
         selected: {
           lines: [currentAction.hovered.line],
           points: [],
@@ -353,6 +442,81 @@ const computeMouseUpAction = (
         selected: {
           lines: [],
           points: [currentAction.hovered.point],
+        },
+      };
+    }
+
+    case ActionKind.TouchingIntersectionWhileSelecting: {
+      return {
+        ...currentAction,
+        kind: ActionKind.HoveringSelectedIntersectionWhileSelecting,
+        selected: {
+          ...currentAction.selected,
+          points: [
+            ...currentAction.selected.points,
+            currentAction.hovered.point,
+          ],
+        },
+      };
+    }
+
+    case ActionKind.TouchingLineWhileSelecting: {
+      return {
+        ...currentAction,
+        kind: ActionKind.HoveringSelectedLineWhileSelecting,
+        selected: {
+          ...currentAction.selected,
+          lines: [...currentAction.selected.lines, currentAction.hovered.line],
+        },
+      };
+    }
+
+    case ActionKind.TouchingSelectedIntersectionWhileSelecting: {
+      if (
+        currentAction.selected.lines.length === 0 &&
+        currentAction.selected.points.length === 1
+      ) {
+        return {
+          kind: ActionKind.HoveringIntersection,
+          hovered: currentAction.hovered,
+          x,
+          y,
+        };
+      }
+
+      return {
+        ...currentAction,
+        kind: ActionKind.HoveringIntersectionWhileSelecting,
+        selected: {
+          ...currentAction.selected,
+          points: currentAction.selected.points.filter(
+            (p) => p !== currentAction.hovered.point
+          ),
+        },
+      };
+    }
+
+    case ActionKind.TouchingSelectedLineWhileSelecting: {
+      if (
+        currentAction.selected.lines.length === 1 &&
+        currentAction.selected.points.length === 0
+      ) {
+        return {
+          kind: ActionKind.HoveringLine,
+          hovered: currentAction.hovered,
+          x,
+          y,
+        };
+      }
+
+      return {
+        ...currentAction,
+        kind: ActionKind.HoveringLineWhileSelecting,
+        selected: {
+          ...currentAction.selected,
+          lines: currentAction.selected.lines.filter(
+            (p) => p !== currentAction.hovered.line
+          ),
         },
       };
     }
@@ -408,6 +572,40 @@ const computeMouseUpAction = (
       );
     }
 
+    case ActionKind.DraggingIntersectionWhileSelecting: {
+      return {
+        ...currentAction,
+        kind: ActionKind.HoveringIntersectionWhileSelecting,
+        hovered: {
+          point: currentAction.dragged.point,
+        },
+      };
+    }
+
+    case ActionKind.DraggingSelectionByPoint: {
+      return {
+        ...currentAction,
+        kind: ActionKind.HoveringSelectedIntersectionWhileSelecting,
+      };
+    }
+
+    case ActionKind.DraggingSelectionByLine: {
+      return {
+        ...currentAction,
+        kind: ActionKind.HoveringSelectedLineWhileSelecting,
+      };
+    }
+
+    case ActionKind.DraggingLineWhileSelecting: {
+      return {
+        ...currentAction,
+        kind: ActionKind.HoveringLineWhileSelecting,
+        hovered: {
+          line: currentAction.dragged.line,
+        },
+      };
+    }
+
     case ActionKind.DraggingLine: {
       return {
         kind: ActionKind.HoveringLine,
@@ -427,68 +625,6 @@ const computeMouseUpAction = (
         },
         x,
         y,
-      };
-    }
-
-    case ActionKind.HoveringLineWhileSelecting: {
-      const lineIsSelected = currentAction.selected.lines.includes(
-        currentAction.hovered.line
-      );
-
-      const lines = lineIsSelected
-        ? currentAction.selected.lines.filter(
-            (id) => id !== currentAction.hovered.line
-          )
-        : [...currentAction.selected.lines, currentAction.hovered.line];
-
-      if (lines.length === 0 && currentAction.selected.points.length === 0) {
-        return {
-          kind: ActionKind.HoveringLine,
-          hovered: {
-            line: currentAction.hovered.line,
-          },
-          x,
-          y,
-        };
-      }
-
-      return {
-        ...currentAction,
-        selected: {
-          ...currentAction.selected,
-          lines,
-        },
-      };
-    }
-
-    case ActionKind.HoveringIntersectionWhileSelecting: {
-      const intersectionIsSelected = currentAction.selected.points.includes(
-        currentAction.hovered.point
-      );
-
-      const points = intersectionIsSelected
-        ? currentAction.selected.points.filter(
-            (id) => id !== currentAction.hovered.point
-          )
-        : [...currentAction.selected.points, currentAction.hovered.point];
-
-      if (points.length === 0 && currentAction.selected.lines.length === 0) {
-        return {
-          kind: ActionKind.HoveringIntersection,
-          hovered: {
-            ...currentAction.hovered,
-          },
-          x,
-          y,
-        };
-      }
-
-      return {
-        ...currentAction,
-        selected: {
-          ...currentAction.selected,
-          points,
-        },
       };
     }
   }
