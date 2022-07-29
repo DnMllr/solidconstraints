@@ -26,6 +26,11 @@ run linter:
   script:
     - pnpm run lint
 
+run tests:
+  stage: test
+  script:
+    - pnpm test
+
 deploy gitlab pages:
   stage: deploy
   script:

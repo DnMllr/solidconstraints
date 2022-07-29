@@ -566,18 +566,20 @@ const createSceneWriter = (
         }
 
         case ActionKind.CreateIntersectionAtIntersection: {
-          const lines: Partial<{ [key in Direction]: GeoLine}> = {};
+          const lines: Partial<{ [key in Direction]: GeoLine }> = {};
 
           for (const lineID of action.hovered.lines) {
             const line = reader.lines()[lineID];
             lines[line.direction] = line;
           }
 
-          const x = lines[Direction.Horizontal]?.id; 
-          const y = lines[Direction.Vertical]?.id; 
+          const x = lines[Direction.Horizontal]?.id;
+          const y = lines[Direction.Vertical]?.id;
 
           if (x === undefined || y === undefined) {
-            console.error('malformed action: CreateIntersectionAtIntersection was missing both a horizontal and vertical line');
+            console.error(
+              "malformed action: CreateIntersectionAtIntersection was missing both a horizontal and vertical line"
+            );
             return;
           }
 
