@@ -2,7 +2,8 @@ import Flatten from "@flatten-js/core";
 import { nanoid } from "nanoid";
 import { createMemo } from "solid-js";
 import { createStore, produce, SetStoreFunction } from "solid-js/store";
-import { Action, ActionKind } from "./actions";
+import { loadEnv } from "vite";
+import { Action, ActionKind, HasSelections } from "./actions";
 
 const ArbitrarilyBig = 9999999999999;
 const buffer = 7;
@@ -484,6 +485,41 @@ const createSceneWriter = (
     );
   };
 
+  const dragSelectionByDelta = (
+    delta: Flatten.Point,
+    action: HasSelections,
+    grid?: Position
+  ) => {
+    const points = reader.points();
+    const lines = reader.lines();
+    const lineSet = new Set(action.selected.lines);
+    for (const id of action.selected.points) {
+      const point = points[id];
+      lineSet.add(point.x);
+      lineSet.add(point.y);
+    }
+
+    const selectedLines = Array.from(lineSet).map((id) => lines[id]);
+    const linePositions = selectedLines.map((l) => {
+      if (l.direction === Direction.Vertical) {
+        return l.v + delta.x;
+      } else {
+        return l.v + delta.y;
+      }
+    });
+
+    for (let i = 0; i < selectedLines.length; i++) {
+      const line = selectedLines[i];
+      const p = linePositions[i];
+
+      if (line.direction === Direction.Vertical) {
+        dragVerticalLine(line.id, p, grid);
+      } else {
+        dragHorizontalLine(line.id, p, grid);
+      }
+    }
+  };
+
   return {
     updateWithAction(action: Action, grid?: Position) {
       switch (action.kind) {
@@ -541,6 +577,7 @@ const createSceneWriter = (
           return;
         }
 
+        case ActionKind.DraggingLineWhileSelecting:
         case ActionKind.DraggingLine: {
           const line = reader.lines()[action.dragged.line];
           switch (line.direction) {
@@ -556,11 +593,34 @@ const createSceneWriter = (
           }
         }
 
+        case ActionKind.DraggingIntersectionWhileSelecting:
         case ActionKind.DraggingIntersection: {
           const points = reader.points();
           const intersection = points[action.dragged.point];
           dragVerticalLine(intersection.y, action.x, grid);
           dragHorizontalLine(intersection.x, action.y, grid);
+          return;
+        }
+
+        case ActionKind.DraggingSelectionByLine: {
+          const lines = reader.lines();
+          const line = lines[action.hovered.line];
+          const delta =
+            line.direction === Direction.Vertical
+              ? point(action.x - line.v, 0)
+              : point(0, action.y - line.v);
+          dragSelectionByDelta(delta, action, grid);
+          return;
+        }
+
+        case ActionKind.DraggingSelectionByPoint: {
+          const points = reader.points();
+          const lines = reader.lines();
+          const p = points[action.hovered.point];
+          const xLine = lines[p.x];
+          const yLine = lines[p.y];
+          const delta = point(action.x - xLine.v, action.y - yLine.v);
+          dragSelectionByDelta(delta, action, grid);
           return;
         }
       }

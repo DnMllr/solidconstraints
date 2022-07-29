@@ -40,8 +40,8 @@ interface HasActionKind<T extends ActionKind> {
   kind: T;
 }
 
-interface HasSelections<T = HasLines & HasPoints> {
-  selected: T;
+export interface HasSelections {
+  selected: HasLines & HasPoints;
 }
 
 interface HasHovered<T> {

@@ -169,7 +169,11 @@ export const ActionPanel: Component<ActionPanelProps> = ({
         if (a == null || b == null) {
           return a == b;
         }
-        return a.leftID === b.leftID && a.rightID === b.rightID;
+        return (
+          a.leftID === b.leftID &&
+          a.rightID === b.rightID &&
+          a.distance === b.distance
+        );
       },
     }
   );

@@ -1,4 +1,4 @@
-import { Direction, Kind, SceneReader } from "./scene";
+import { Direction, Kind, Position, SceneReader } from "./scene";
 import rough from "roughjs";
 import { RoughCanvas } from "roughjs/bin/canvas";
 import { Options } from "roughjs/bin/core";
@@ -7,6 +7,7 @@ import {
   ActionKind,
   getXPosition,
   getYPosition,
+  HasSelections,
   selectedElements,
 } from "./actions";
 import Flatten from "@flatten-js/core";
@@ -117,11 +118,6 @@ const theme: Theme = {
   },
 };
 
-interface Position {
-  x: number;
-  y: number;
-}
-
 const draw = {
   canvas: {
     axis(rc: RoughCanvas, width: number, height: number) {
@@ -159,6 +155,38 @@ const draw = {
       }
     },
   },
+
+  all: {
+    selections(
+      rc: RoughCanvas,
+      scene: SceneReader,
+      action: HasSelections,
+      width: number,
+      height: number
+    ) {
+      const points = scene.points();
+      for (const point of action.selected.points) {
+        draw.point.selected(rc, points[point].geom);
+      }
+
+      const lines = scene.lines();
+      for (const id of action.selected.lines) {
+        draw.lines.selected(rc, lines[id].geom, width, height);
+      }
+    },
+
+    all(
+      rc: RoughCanvas,
+      scene: SceneReader,
+      width: number,
+      height: number,
+      except?: Set<string>
+    ) {
+      draw.lines.all(rc, scene, width, height, except);
+      draw.point.all(rc, scene, except);
+    },
+  },
+
   lines: {
     all(
       rc: RoughCanvas,
@@ -342,6 +370,8 @@ const renderAction = (
   width: number,
   height: number
 ) => {
+  const points = scene.points();
+  const lines = scene.lines();
   switch (action.kind) {
     case ActionKind.None: {
       // TODO(Dan) polygons
@@ -354,30 +384,24 @@ const renderAction = (
     case ActionKind.CreateIntersectionAlongLine:
     case ActionKind.CreateIntersectionAtIntersection:
     case ActionKind.Interacting: {
-      finishScene(rc, scene, width, height);
+      draw.all.all(rc, scene, width, height);
       return;
     }
 
     case ActionKind.Selecting: {
-      const drawn = new Set<string>();
+      const except = new Set<string>([
+        ...action.selected.lines,
+        ...action.selected.points,
+      ]);
 
-      const lines = scene.lines();
-      for (const id of action.selected.lines) {
-        drawn.add(id);
-        draw.lines.selected(rc, lines[id].geom, width, height);
-      }
-
-      const points = scene.points();
-      for (const id of action.selected.points) {
-        drawn.add(id);
-        draw.point.selected(rc, points[id].geom);
-      }
-
-      finishScene(rc, scene, width, height, drawn);
+      draw.all.all(rc, scene, width, height, except);
+      draw.all.selections(rc, scene, action, width, height);
       return;
     }
 
     case ActionKind.PlacingLine: {
+      draw.all.all(rc, scene, width, height);
+
       switch (action.direction) {
         case Direction.Horizontal: {
           draw.lines.insert.horizontal(rc, action, width);
@@ -390,75 +414,140 @@ const renderAction = (
         }
       }
 
-      finishScene(rc, scene, width, height);
       return;
     }
 
     case ActionKind.TouchingLine:
     case ActionKind.HoveringLine: {
-      const drawn = new Set<string>();
-      const lines = scene.lines();
+      const drawn = new Set<string>(action.hovered.line);
 
-      drawn.add(action.hovered.line);
+      draw.all.all(rc, scene, width, height, drawn);
       draw.lines.hovering(rc, lines[action.hovered.line].geom, width, height);
-
-      finishScene(rc, scene, width, height, drawn);
       return;
     }
 
+    case ActionKind.TouchingSelectedLineWhileSelecting:
+    case ActionKind.HoveringSelectedLineWhileSelecting:
+    case ActionKind.TouchingLineWhileSelecting:
     case ActionKind.HoveringLineWhileSelecting: {
-      const drawn = new Set<string>();
+      const except = new Set<string>([
+        ...action.selected.points,
+        ...action.selected.lines,
+        action.hovered.line,
+      ]);
 
-      const lines = scene.lines();
+      draw.all.all(rc, scene, width, height, except);
+      draw.all.selections(rc, scene, action, width, height);
 
-      for (const id of action.selected.lines) {
-        drawn.add(id);
-        if (id === action.hovered.line) {
-          draw.lines.hoveringSelected(rc, lines[id].geom, width, height);
-        } else {
-          draw.lines.selected(rc, lines[id].geom, width, height);
-        }
-      }
-
-      if (!drawn.has(action.hovered.line)) {
-        drawn.add(action.hovered.line);
+      if (action.kind === ActionKind.HoveringLineWhileSelecting) {
         draw.lines.hovering(rc, lines[action.hovered.line].geom, width, height);
+      } else {
+        draw.lines.hoveringSelected(
+          rc,
+          lines[action.hovered.line].geom,
+          width,
+          height
+        );
       }
 
-      const points = scene.points();
-      for (const id of action.selected.points) {
-        drawn.add(id);
-        draw.point.selected(rc, points[id].geom);
-      }
-
-      finishScene(rc, scene, width, height, drawn);
       return;
     }
 
     case ActionKind.DraggingLine: {
-      const drawn = new Set<string>();
-      const lines = scene.lines();
+      draw.all.all(
+        rc,
+        scene,
+        width,
+        height,
+        new Set<string>([action.dragged.line])
+      );
 
-      drawn.add(action.dragged.line);
       draw.lines.dragging(rc, lines[action.dragged.line].geom, width, height);
+      return;
+    }
 
-      finishScene(rc, scene, width, height, drawn);
+    case ActionKind.DraggingLineWhileSelecting: {
+      draw.all.all(
+        rc,
+        scene,
+        width,
+        height,
+        new Set<string>([
+          ...action.selected.points,
+          ...action.selected.lines,
+          action.dragged.line,
+        ])
+      );
+
+      draw.all.selections(rc, scene, action, width, height);
+      draw.lines.dragging(rc, lines[action.dragged.line].geom, width, height);
+      return;
+    }
+
+    case ActionKind.DraggingIntersectionWhileSelecting: {
+      draw.all.all(
+        rc,
+        scene,
+        width,
+        height,
+        new Set<string>([
+          ...action.selected.points,
+          ...action.selected.lines,
+          action.dragged.point,
+        ])
+      );
+
+      draw.all.selections(rc, scene, action, width, height);
+      draw.point.dragging(rc, points[action.dragged.point].geom);
+      return;
+    }
+
+    case ActionKind.DraggingSelectionByLine: {
+      draw.all.all(
+        rc,
+        scene,
+        width,
+        height,
+        new Set<string>([
+          ...action.selected.points,
+          ...action.selected.lines,
+          action.hovered.line,
+        ])
+      );
+
+      draw.all.selections(rc, scene, action, width, height);
+      draw.lines.dragging(rc, lines[action.hovered.line].geom, width, height);
+      return;
+    }
+
+    case ActionKind.DraggingSelectionByPoint: {
+      draw.all.all(
+        rc,
+        scene,
+        width,
+        height,
+        new Set<string>([
+          ...action.selected.points,
+          ...action.selected.lines,
+          action.hovered.point,
+        ])
+      );
+
+      draw.all.selections(rc, scene, action, width, height);
+      draw.point.dragging(rc, points[action.hovered.point].geom);
       return;
     }
 
     case ActionKind.PlacingIntersection: {
+      draw.all.all(rc, scene, width, height);
       draw.lines.insert.vertical(rc, action, height);
       draw.lines.insert.horizontal(rc, action, width);
       draw.point.insert(rc, action);
-
-      finishScene(rc, scene, width, height);
       return;
     }
 
     case ActionKind.PlacingIntersectionAtIntersection: {
       const drawn = new Set<string>();
-      const lines = scene.lines();
-
       const axis = {};
 
       for (const id of action.hovered.lines) {
@@ -473,7 +562,7 @@ const renderAction = (
         y: axis[Direction.Horizontal].geom.start.y,
       });
 
-      finishScene(rc, scene, width, height, drawn);
+      draw.all.all(rc, scene, width, height, drawn);
       return;
     }
 
@@ -497,55 +586,46 @@ const renderAction = (
         }
       }
 
-      finishScene(rc, scene, width, height, drawn);
+      draw.all.all(rc, scene, width, height, drawn);
       return;
     }
 
     case ActionKind.TouchingIntersection:
     case ActionKind.HoveringIntersection: {
-      const drawn = new Set<string>();
-      drawn.add(action.hovered.point);
-      draw.point.hovering(rc, scene.points()[action.hovered.point].geom);
+      const drawn = new Set<string>([action.hovered.point]);
+      draw.all.all(rc, scene, width, height, drawn);
 
-      finishScene(rc, scene, width, height, drawn);
+      draw.point.hovering(rc, points[action.hovered.point].geom);
       return;
     }
 
+    case ActionKind.TouchingSelectedIntersectionWhileSelecting:
+    case ActionKind.HoveringSelectedIntersectionWhileSelecting:
+    case ActionKind.TouchingIntersectionWhileSelecting:
     case ActionKind.HoveringIntersectionWhileSelecting: {
-      const drawn = new Set<string>();
+      const except = new Set<string>([
+        ...action.selected.points,
+        ...action.selected.lines,
+        action.hovered.point,
+      ]);
+
+      draw.all.all(rc, scene, width, height, except);
+      draw.all.selections(rc, scene, action, width, height);
+
       const points = scene.points();
-      const lines = scene.lines();
-
-      for (const id of action.selected.lines) {
-        drawn.add(id);
-        draw.lines.selected(rc, lines[id].geom, width, height);
-      }
-
-      for (const id of action.selected.points) {
-        drawn.add(id);
-        if (id === action.hovered.point) {
-          draw.point.hoveringSelected(rc, points[id].geom);
-        } else {
-          draw.point.selected(rc, points[id].geom);
-        }
-      }
-
-      if (!drawn.has(action.hovered.point)) {
-        drawn.add(action.hovered.point);
+      if (action.kind === ActionKind.HoveringIntersectionWhileSelecting) {
         draw.point.hovering(rc, points[action.hovered.point].geom);
+      } else {
+        draw.point.hoveringSelected(rc, points[action.hovered.point].geom);
       }
-
-      finishScene(rc, scene, width, height, drawn);
       return;
     }
 
     case ActionKind.DraggingIntersection: {
       const drawn = new Set<string>();
-      const points = scene.points();
-      drawn.add(action.dragged.point);
       draw.point.dragging(rc, points[action.dragged.point].geom);
 
-      finishScene(rc, scene, width, height, drawn);
+      draw.all.all(rc, scene, width, height, drawn);
       return;
     }
 
@@ -613,20 +693,9 @@ const renderAction = (
         }
       }
 
-      finishScene(rc, scene, width, height, drawn);
+      draw.all.all(rc, scene, width, height, drawn);
 
       return;
     }
   }
-};
-
-const finishScene = (
-  rc: RoughCanvas,
-  scene: SceneReader,
-  width: number,
-  height: number,
-  except?: Set<string>
-) => {
-  draw.lines.all(rc, scene, width, height, except);
-  draw.point.all(rc, scene, except);
 };
