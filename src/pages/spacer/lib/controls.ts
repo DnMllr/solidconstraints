@@ -115,3 +115,11 @@ export const createNumberInput = (value: number) => {
     },
   };
 };
+
+export const isInVerticalLineMode = ({ mode }: ControlsState) =>
+  mode === Mode.VerticalLine;
+export const isInHorizontalLineMode = ({ mode }: ControlsState) =>
+  mode === Mode.HorizontalLine;
+export const isInIntersectionMode = ({ mode }: ControlsState) =>
+  mode === Mode.Point;
+export const isInNoneMode = ({ mode }: ControlsState) => mode === Mode.None;
