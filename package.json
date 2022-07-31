@@ -10,7 +10,6 @@
     "build": "vite build",
     "serve": "vite preview"
   },
-  "type": "module",
   "license": "MIT",
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.31.0",
