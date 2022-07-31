@@ -34,7 +34,6 @@ export enum ActionKind {
 
   UIHoveringElement,
   UIHoveringElementWhileSelecting,
-  UIPlacingSegmentWhileSelecting,
 }
 
 export interface HasActionKind<T extends ActionKind> {

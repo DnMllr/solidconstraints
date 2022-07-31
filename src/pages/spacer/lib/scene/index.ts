@@ -12,17 +12,12 @@ import {
   Intersection,
   Kind,
   Line,
-  Poly,
-  Segment,
 } from "./abstractGeometry";
 import {
   GeometricRecordOf,
   createXLines,
   createYLines,
   createIntersections,
-  createSegments,
-  createRings,
-  createPolys,
 } from "./concretion";
 import { Geometry, GeoLine, Position } from "./geometry";
 import { Identifier } from "./id";
@@ -42,17 +37,12 @@ const makeBaseScene = (): BaseScene => ({
   },
   lines: {},
   intersections: {},
-  segments: {},
-  rings: {},
-  polys: {},
 });
 
 export interface SceneReader {
   grid(): Grid;
   lines(): GeometricRecordOf<Line, Flatten.Segment>;
   points(): GeometricRecordOf<Intersection, Flatten.Point>;
-  segments(): GeometricRecordOf<Segment, Flatten.Segment>;
-  polygons(): GeometricRecordOf<Poly, Flatten.Polygon>;
   hit(x: number, y: number): Geometry[];
   lookup(id: string): Geometry | undefined;
 }
@@ -73,18 +63,11 @@ const createSceneReader = (
   const points = createMemo(() =>
     createIntersections(lines(), scene.intersections)
   );
-  const segments = createMemo(() => createSegments(points(), scene.segments));
-  const rings = createMemo(() => createRings(points(), scene.rings));
-  const polygons = createMemo(() =>
-    createPolys(points(), rings(), scene.polys)
-  );
+
   const all = createMemo(() => {
     return {
       ...lines(),
       ...points(),
-      ...rings(),
-      ...segments(),
-      ...polygons(),
     };
   });
 
@@ -121,8 +104,6 @@ const createSceneReader = (
     grid: () => scene.grid,
     lines: () => lines(),
     points: () => points(),
-    segments: () => segments(),
-    polygons: () => polygons(),
   };
 };
 
