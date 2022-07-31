@@ -1,8 +1,8 @@
 import Flatten from "@flatten-js/core";
-import { nanoid } from "nanoid";
+import nanoid from "nanoid";
 import { createMemo } from "solid-js";
 import { createStore, produce, SetStoreFunction } from "solid-js/store";
-import { Action, ActionKind, HasSelections } from "./actions";
+import { Action, ActionKind, HasSelections } from "../actions";
 
 const ArbitrarilyBig = 9999999999999;
 const buffer = 7;
@@ -25,7 +25,7 @@ class Identifier {
       return id;
     }
 
-    id = nanoid(6);
+    id = nanoid.nanoid(6);
     this.cache[key] = id;
 
     return id;
@@ -105,7 +105,7 @@ interface GeoObject<T> {
 }
 
 const makeBaseScene = (): BaseScene => ({
-  id: nanoid(),
+  id: nanoid.nanoid(),
   all: {},
   grid: {
     xs: [],

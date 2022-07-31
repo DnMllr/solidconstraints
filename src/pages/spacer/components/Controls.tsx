@@ -15,7 +15,8 @@ import {
   MagnifyMinus,
   MagnifyPlus,
 } from "../../../components/icons";
-import { ControlsCtrl, createNumberInput, Mode } from "../lib/controls";
+import { ControlsCtrl, Mode } from "../lib/controls";
+import { createNumberInput } from "../lib/controls/numberinput";
 
 export interface ControlsProps {
   ctrl: ControlsCtrl;

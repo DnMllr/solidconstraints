@@ -1,4 +1,3 @@
-import { batch } from "solid-js";
 import { createStore } from "solid-js/store";
 
 export enum Mode {
@@ -40,6 +39,10 @@ export const createControls = (): ControlsCtrl => {
   return {
     controls,
     setGrid(x: number, y: number) {
+      if (x < 0 || y < 0) {
+        throw new Error("grid values must be positive");
+      }
+
       setControls("grid", { x, y });
     },
     unsetGrid() {
@@ -78,40 +81,6 @@ export const createControls = (): ControlsCtrl => {
     },
     exitMode() {
       setControls("mode", Mode.None);
-    },
-  };
-};
-
-export const createNumberInput = (value: number) => {
-  const [store, set] = createStore({
-    value,
-    rawValue: value.toString(),
-    isValid: true,
-  });
-
-  return {
-    string() {
-      if (store.isValid) {
-        return store.value;
-      }
-      return store.rawValue;
-    },
-    number() {
-      return store.value;
-    },
-    invalid(): boolean {
-      return !store.isValid;
-    },
-    setString(input: string) {
-      batch(() => {
-        set("rawValue", input);
-        try {
-          const value = parseInt(input);
-          set("value", value);
-        } catch {
-          set("isValid", false);
-        }
-      });
     },
   };
 };

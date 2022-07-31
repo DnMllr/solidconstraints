@@ -1,4 +1,4 @@
-import { Direction, Position } from "./scene";
+import { Direction, Position } from "../scene";
 
 export enum ActionKind {
   None,
@@ -36,7 +36,7 @@ export enum ActionKind {
   UIPlacingSegmentWhileSelecting,
 }
 
-interface HasActionKind<T extends ActionKind> {
+export interface HasActionKind<T extends ActionKind> {
   kind: T;
 }
 
@@ -44,194 +44,179 @@ export interface HasSelections {
   selected: HasLines & HasPoints;
 }
 
-interface HasHovered<T> {
+export interface HasHovered<T> {
   hovered: T;
 }
 
-interface HasDragged<T> {
+export interface HasDragged<T> {
   dragged: T;
 }
 
-interface HasDirection {
+export interface HasDirection {
   direction: Direction;
 }
 
-interface HasX {
-  x: number;
-}
-
-interface HasY {
-  y: number;
-}
-
-interface HasLines {
+export interface HasLines {
   lines: string[];
 }
 
-interface HasLine {
+export interface HasLine {
   line: string;
 }
 
-interface HasPoints {
+export interface HasPoints {
   points: string[];
 }
 
-interface HasPoint {
+export interface HasPoint {
   point: string;
 }
 
-type HasCoordinates = HasX & HasY;
+export type NonInteractingAction = HasActionKind<ActionKind.None>;
 
-type NonInteractingAction = HasActionKind<ActionKind.None>;
-
-interface InteractingAction
+export interface InteractingAction
   extends HasActionKind<ActionKind.Interacting>,
-    HasCoordinates {}
+    Position {}
 
-interface SelectingAction
+export interface SelectingAction
   extends HasActionKind<ActionKind.Selecting>,
     HasSelections,
-    HasCoordinates {}
+    Position {}
 
-interface PlacingLineAction
+export interface PlacingLineAction
   extends HasActionKind<ActionKind.PlacingLine>,
     HasDirection,
-    HasCoordinates {}
+    Position {}
 
-interface HoveringLineAction
+export interface HoveringLineAction
   extends HasActionKind<ActionKind.HoveringLine>,
     HasHovered<HasLine>,
-    HasCoordinates {}
+    Position {}
 
-interface HoveringLineWhileSelectingAction
+export interface HoveringLineWhileSelectingAction
   extends HasActionKind<ActionKind.HoveringLineWhileSelecting>,
     HasHovered<HasLine>,
     HasSelections {}
 
-interface HoveringSelectedLineWhileSelectingAction
+export interface HoveringSelectedLineWhileSelectingAction
   extends HasActionKind<ActionKind.HoveringSelectedLineWhileSelecting>,
     HasHovered<HasLine>,
     HasSelections {}
 
-interface HoveringIntersectionWhileSelectingAction
+export interface HoveringIntersectionWhileSelectingAction
   extends HasActionKind<ActionKind.HoveringIntersectionWhileSelecting>,
     HasHovered<HasPoint>,
     HasSelections {}
 
-interface HoveringSelectedIntersectionWhileSelectingAction
+export interface HoveringSelectedIntersectionWhileSelectingAction
   extends HasActionKind<ActionKind.HoveringSelectedIntersectionWhileSelecting>,
     HasHovered<HasPoint>,
     HasSelections {}
 
-interface TouchingLineAction
+export interface TouchingLineAction
   extends HasActionKind<ActionKind.TouchingLine>,
     HasHovered<HasLine> {}
 
-interface TouchingLineWhileSelectingAction
+export interface TouchingLineWhileSelectingAction
   extends HasActionKind<ActionKind.TouchingLineWhileSelecting>,
     HasHovered<HasLine>,
     HasSelections {}
 
-interface DraggingLineAction
+export interface DraggingLineAction
   extends HasActionKind<ActionKind.DraggingLine>,
     HasDragged<HasLine>,
-    HasCoordinates {}
+    Position {}
 
-interface DraggingLineWhileSelectingAction
+export interface DraggingLineWhileSelectingAction
   extends HasActionKind<ActionKind.DraggingLineWhileSelecting>,
     HasDragged<HasLine>,
     HasSelections,
-    HasCoordinates {}
+    Position {}
 
-interface DraggingIntersectionWhileSelectingAction
+export interface DraggingIntersectionWhileSelectingAction
   extends HasActionKind<ActionKind.DraggingIntersectionWhileSelecting>,
     HasDragged<HasPoint>,
     HasSelections,
-    HasCoordinates {}
+    Position {}
 
-interface PlacingIntersectionAction
+export interface PlacingIntersectionAction
   extends HasActionKind<ActionKind.PlacingIntersection>,
-    HasCoordinates {}
+    Position {}
 
-interface PlacingIntersectionAlongLineAction
+export interface PlacingIntersectionAlongLineAction
   extends HasActionKind<ActionKind.PlacingIntersectionAlongLine>,
     HasHovered<HasLine>,
-    HasCoordinates {}
+    Position {}
 
-interface HoveringIntersectionAction
+export interface HoveringIntersectionAction
   extends HasActionKind<ActionKind.HoveringIntersection>,
     HasHovered<HasPoint>,
-    HasCoordinates {}
+    Position {}
 
-interface TouchingIntersectionAction
+export interface TouchingIntersectionAction
   extends HasActionKind<ActionKind.TouchingIntersection>,
     HasHovered<HasPoint> {}
 
-interface DraggingIntersectionAction
+export interface DraggingIntersectionAction
   extends HasActionKind<ActionKind.DraggingIntersection>,
     HasDragged<HasPoint & HasLines>,
-    HasCoordinates {}
+    Position {}
 
-interface CreateLineAction
+export interface CreateLineAction
   extends HasActionKind<ActionKind.CreateLine>,
     HasDirection,
-    HasCoordinates {}
+    Position {}
 
-interface CreateIntersectionAction
+export interface CreateIntersectionAction
   extends HasActionKind<ActionKind.CreateIntersection>,
-    HasCoordinates {}
+    Position {}
 
-interface CreateIntersectionAlongLineAction
+export interface CreateIntersectionAlongLineAction
   extends HasActionKind<ActionKind.CreateIntersectionAlongLine>,
     HasHovered<HasLine>,
-    HasCoordinates {}
+    Position {}
 
-interface CreateIntersectionAlongIntersectionAction
+export interface CreateIntersectionAlongIntersectionAction
   extends HasActionKind<ActionKind.CreateIntersectionAtIntersection>,
     HasHovered<HasLines> {}
 
-interface PlacingIntersectionAtIntersectionAction
+export interface PlacingIntersectionAtIntersectionAction
   extends HasActionKind<ActionKind.PlacingIntersectionAtIntersection>,
     HasHovered<HasLines>,
-    HasCoordinates {}
+    Position {}
 
-interface TouchingSelectedIntersectionWhileSelectingAction
+export interface TouchingSelectedIntersectionWhileSelectingAction
   extends HasActionKind<ActionKind.TouchingSelectedIntersectionWhileSelecting>,
     HasHovered<HasPoint>,
     HasSelections {}
 
-interface TouchingIntersectionWhileSelectingAction
+export interface TouchingIntersectionWhileSelectingAction
   extends HasActionKind<ActionKind.TouchingIntersectionWhileSelecting>,
     HasHovered<HasPoint>,
     HasSelections {}
 
-interface TouchingSelectedLineWhileSelectingAction
+export interface TouchingSelectedLineWhileSelectingAction
   extends HasActionKind<ActionKind.TouchingSelectedLineWhileSelecting>,
     HasHovered<HasLine>,
     HasSelections {}
 
-interface TouchingLineWhileSelectingAction
-  extends HasActionKind<ActionKind.TouchingLineWhileSelecting>,
-    HasHovered<HasLine>,
-    HasSelections {}
-
-interface DraggingSelectionByLineAction
+export interface DraggingSelectionByLineAction
   extends HasActionKind<ActionKind.DraggingSelectionByLine>,
     HasSelections,
     HasHovered<HasLine>,
-    HasCoordinates {}
+    Position {}
 
-interface DraggingSelectionByPointAction
+export interface DraggingSelectionByPointAction
   extends HasActionKind<ActionKind.DraggingSelectionByPoint>,
     HasSelections,
     HasHovered<HasPoint>,
-    HasCoordinates {}
+    Position {}
 
-interface UIHoveringElementAction
+export interface UIHoveringElementAction
   extends HasActionKind<ActionKind.UIHoveringElement>,
     HasHovered<string> {}
 
-interface UIHoveringElementWhileSelectingAction
+export interface UIHoveringElementWhileSelectingAction
   extends HasActionKind<ActionKind.UIHoveringElementWhileSelecting>,
     HasHovered<string>,
     HasSelections {}
