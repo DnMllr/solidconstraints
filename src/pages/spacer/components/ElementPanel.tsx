@@ -12,8 +12,9 @@ import {
 } from "@hope-ui/solid";
 
 import { InteractionCtrl } from "../lib/interactor";
-import { GeoLine, GeoPoint, SceneCtl } from "../lib/scene";
+import { SceneCtl } from "../lib/scene";
 import { IDBadge } from "./IDBadge";
+import { GeoLine, GeoPoint } from "../lib/scene/geometry";
 
 interface Elements {
   xLines: GeoLine[];

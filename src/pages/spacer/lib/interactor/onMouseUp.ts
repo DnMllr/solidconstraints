@@ -1,6 +1,7 @@
 import { Action, ActionKind } from "../actions";
 import { ControlsState } from "../controls";
-import { Direction, Position, SceneReader } from "../scene";
+import { Position, SceneReader } from "../scene";
+import { Direction } from "../scene/abstractGeometry";
 import { computeEnterAction } from "./onMouseEnter";
 import { computePosition } from "./utilities";
 

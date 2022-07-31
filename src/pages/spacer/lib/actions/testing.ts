@@ -56,6 +56,10 @@ import {
   arbitraryPosition,
 } from "../scene/testing";
 
+if (import.meta.env.PROD) {
+  console.warn("testing file was required in a PROD build");
+}
+
 export const arbitraryActionKind = () =>
   nat(Object.keys(ActionKind).length / 2 - 1);
 

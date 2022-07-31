@@ -1,9 +1,10 @@
 import { Action, ActionKind } from "../actions";
 import { ControlsState } from "../controls";
-import { Kind, Position, SceneReader } from "../scene";
+import { Position, SceneReader } from "../scene";
 import { computePosition } from "./utilities";
 import { computeEnterAction } from "./onMouseEnter";
 import { highestPriorityElement } from "./hittesting";
+import { Kind } from "../scene/abstractGeometry";
 
 export const onMouseMove = (
   currentAction: Action,

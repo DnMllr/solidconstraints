@@ -6,6 +6,7 @@
     "dev": "vite",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
+    "test:coverage": "vitest --coverage",
     "lint": "eslint .",
     "build": "vite build",
     "serve": "vite preview"
@@ -15,6 +16,7 @@
     "@typescript-eslint/eslint-plugin": "^5.31.0",
     "@typescript-eslint/parser": "^5.31.0",
     "autoprefixer": "^10.4.7",
+    "c8": "^7.12.0",
     "eslint": "^8.20.0",
     "eslint-config-prettier": "^8.5.0",
     "fast-check": "^3.1.1",

@@ -10,7 +10,8 @@ import {
 } from "../lib/actions";
 
 import { InteractionCtrl } from "../lib/interactor";
-import { Direction, Kind, SceneReader } from "../lib/scene";
+import { SceneReader } from "../lib/scene";
+import { Direction, Kind } from "../lib/scene/abstractGeometry";
 import { IDBadge } from "./IDBadge";
 
 export interface ActionPanelProps {

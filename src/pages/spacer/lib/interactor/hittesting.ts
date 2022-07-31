@@ -1,4 +1,5 @@
-import { Direction, GeoLine, Geometry, GeoPoint, Kind } from "../scene";
+import { Direction, Kind } from "../scene/abstractGeometry";
+import { GeoLine, Geometry, GeoPoint } from "../scene/geometry";
 
 export const firstPoint = (elements: Geometry[]): GeoPoint | undefined => {
   for (const el of elements) {

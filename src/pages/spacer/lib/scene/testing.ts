@@ -1,5 +1,10 @@
 import { Arbitrary, constantFrom, double, tuple, uuid } from "fast-check";
-import { Direction, Position } from ".";
+import { Position } from ".";
+import { Direction } from "./abstractGeometry";
+
+if (import.meta.env.PROD) {
+  console.warn("testing file was required in a PROD build");
+}
 
 export const arbitraryElementID = (): Arbitrary<string> => uuid();
 

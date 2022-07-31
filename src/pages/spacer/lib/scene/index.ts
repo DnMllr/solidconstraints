@@ -2,107 +2,36 @@ import Flatten from "@flatten-js/core";
 import { nanoid } from "nanoid";
 import { createMemo } from "solid-js";
 import { createStore, produce, SetStoreFunction } from "solid-js/store";
+
 import { Action, ActionKind, HasSelections } from "../actions";
-
-const ArbitrarilyBig = 9999999999999;
-const buffer = 7;
-
-type RecordOf<T> = Record<string, T>;
-type WithGeometry<T, G> = T & GeoObject<G>;
-type GeometricRecordOf<T, G> = RecordOf<WithGeometry<T, G>>;
-
-export interface Position {
-  x: number;
-  y: number;
-}
-
-class Identifier {
-  cache: RecordOf<string | undefined> = {};
-
-  next(key: string): string {
-    let id = this.cache[key];
-    if (id !== undefined) {
-      return id;
-    }
-
-    id = nanoid(6);
-    this.cache[key] = id;
-
-    return id;
-  }
-}
-
-export enum Kind {
-  Point,
+import { RecordOf } from "../../../../lib/utilities";
+import {
+  BaseScene,
+  Direction,
+  Grid,
+  Intersection,
+  Kind,
   Line,
-  Segment,
-  Ring,
   Poly,
-}
+  Segment,
+} from "./abstractGeometry";
+import {
+  GeometricRecordOf,
+  createXLines,
+  createYLines,
+  createIntersections,
+  createSegments,
+  createRings,
+  createPolys,
+} from "./concretion";
+import { Geometry, GeoLine, Position } from "./geometry";
+import { Identifier } from "./id";
+import { toRecord } from "./utilities";
 
-interface HasKind<T extends Kind> {
-  kind: T;
-}
+export type { Position } from "./geometry";
 
-export interface HasID {
-  id: string;
-}
-
-interface Intersection extends HasID, HasKind<Kind.Point> {
-  x: string;
-  y: string;
-}
-
-export enum Direction {
-  Horizontal,
-  Vertical,
-}
-
-interface Line extends HasID, HasKind<Kind.Line> {
-  direction: Direction;
-  v: number;
-}
-
-interface Segment extends HasID, HasKind<Kind.Segment> {
-  a: string;
-  b: string;
-}
-
-interface Ring extends HasID, HasKind<Kind.Ring> {
-  points: string[];
-}
-
-interface Poly extends HasID, HasKind<Kind.Poly> {
-  exterior: string;
-  holes: string[];
-}
-
-interface Grid {
-  xs: string[];
-  ys: string[];
-}
-
-interface BaseScene extends HasID {
-  grid: Grid;
-  all: RecordOf<AbstractGeometry>;
-  lines: RecordOf<Line>;
-  intersections: RecordOf<Intersection>;
-  segments: RecordOf<Segment>;
-  rings: RecordOf<Ring>;
-  polys: RecordOf<Poly>;
-}
-
-export type AbstractGeometry = Poly | Ring | Segment | Line | Intersection;
-export type Geometry =
-  | WithGeometry<Poly, Flatten.Polygon>
-  | WithGeometry<Segment, Flatten.Segment>
-  | WithGeometry<Ring, Flatten.Polygon>
-  | WithGeometry<Line, Flatten.Segment>
-  | WithGeometry<Intersection, Flatten.Point>;
-
-interface GeoObject<T> {
-  geom: T;
-}
+const buffer = 7;
+const { point } = Flatten;
 
 const makeBaseScene = (): BaseScene => ({
   id: nanoid(),
@@ -117,119 +46,6 @@ const makeBaseScene = (): BaseScene => ({
   rings: {},
   polys: {},
 });
-
-const { point, segment } = Flatten;
-
-const createXLines = (
-  scene: BaseScene
-): WithGeometry<Line, Flatten.Segment>[] =>
-  scene.grid.xs.map((key) => ({
-    ...scene.lines[key],
-    geom: segment(
-      point(0, scene.lines[key].v),
-      point(ArbitrarilyBig, scene.lines[key].v)
-    ),
-  }));
-
-const createYLines = (
-  scene: BaseScene
-): WithGeometry<Line, Flatten.Segment>[] =>
-  scene.grid.ys.map((key) => ({
-    ...scene.lines[key],
-    geom: segment(
-      point(scene.lines[key].v, 0),
-      point(scene.lines[key].v, ArbitrarilyBig)
-    ),
-  }));
-
-const assertSingle = <T>(list: T[]): T => {
-  if (list.length !== 1) {
-    throw new Error("expected only a single element in array");
-  }
-
-  return list[0];
-};
-
-const toRecord = <T extends HasID>(list: T[]): RecordOf<T> =>
-  list.reduce((m, i) => {
-    m[i.id] = i;
-    return m;
-  }, {});
-
-const mapGeoObject = <T extends HasID, G>(
-  obj: RecordOf<T>,
-  f: (x: T) => G
-): GeometricRecordOf<T, G> =>
-  toRecord(
-    Object.values(obj).map((i) => ({
-      ...i,
-      geom: f(i),
-    }))
-  );
-
-const createIntersections = (
-  lines: GeometricRecordOf<Line, Flatten.Segment>,
-  intersections: RecordOf<Intersection>
-): GeometricRecordOf<Intersection, Flatten.Point> =>
-  mapGeoObject(intersections, (i) =>
-    assertSingle(lines[i.x].geom.intersect(lines[i.y].geom))
-  );
-
-const squaredPolar = (point: Flatten.Point, center: Flatten.Point) => {
-  return [
-    Math.atan2(point.y - center.y, point.x - center.x),
-    (point.x - center.x) ** 2 + (point.y - center.y) ** 2,
-  ];
-};
-
-const polySort = (points: Flatten.Point[]): Flatten.Point[] => {
-  const center = point(
-    points.reduce((sum, p) => sum + p.x, 0) / points.length,
-    points.reduce((sum, p) => sum + p.y, 0) / points.length
-  );
-  const withPolarAngleAndDistance = points.map((point) => ({
-    point,
-    squaredPolar: squaredPolar(point, center),
-  }));
-  withPolarAngleAndDistance.sort(
-    (a, b) =>
-      a.squaredPolar[0] - b.squaredPolar[0] ||
-      a.squaredPolar[1] - b.squaredPolar[1]
-  );
-  return withPolarAngleAndDistance.map(({ point }) => point);
-};
-
-const createRings = (
-  points: GeometricRecordOf<Intersection, Flatten.Point>,
-  rings: RecordOf<Ring>
-): GeometricRecordOf<Ring, Flatten.Polygon> =>
-  mapGeoObject(rings, (r) => {
-    return new Flatten.Polygon(polySort(r.points.map((p) => points[p].geom)));
-  });
-
-const createSegments = (
-  points: GeometricRecordOf<Intersection, Flatten.Point>,
-  segments: RecordOf<Segment>
-): GeometricRecordOf<Segment, Flatten.Segment> =>
-  mapGeoObject(segments, (s) => segment(points[s.a].geom, points[s.b].geom));
-
-const createPolys = (
-  points: GeometricRecordOf<Intersection, Flatten.Point>,
-  rings: GeometricRecordOf<Ring, Flatten.Polygon>,
-  polys: RecordOf<Poly>
-): GeometricRecordOf<Poly, Flatten.Polygon> =>
-  mapGeoObject(polys, (p) => {
-    const poly = new Flatten.Polygon(
-      polySort(rings[p.exterior].points.map((p) => points[p].geom))
-    );
-    for (const holeID of p.holes) {
-      poly.addFace(polySort(rings[holeID].points.map((p) => points[p].geom)));
-    }
-    return poly;
-  });
-
-export type GeoLine = WithGeometry<Line, Flatten.Segment>;
-export type GeoPoint = WithGeometry<Intersection, Flatten.Point>;
 
 export interface SceneReader {
   grid(): Grid;

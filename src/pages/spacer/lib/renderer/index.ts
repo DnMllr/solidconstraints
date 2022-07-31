@@ -1,4 +1,4 @@
-import { Direction, GeoLine, Kind, Position, SceneReader } from "../scene";
+import { Position, SceneReader } from "../scene";
 import { Action, ActionKind, selectedElements } from "../actions";
 import { DrawCommands, pen } from "./draw";
 import {
@@ -7,6 +7,8 @@ import {
   drawSelections,
   renderMouseTicksIfPresent,
 } from "./utilities";
+import { Direction, Kind } from "../scene/abstractGeometry";
+import { GeoLine } from "../scene/geometry";
 
 export const render = (
   scene: SceneReader,

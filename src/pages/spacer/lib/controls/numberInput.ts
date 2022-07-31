@@ -31,15 +31,11 @@ export const createNumberInput = (value: number): NumberInput => {
     setString(input: string) {
       batch(() => {
         set("rawValue", input);
-        try {
-          const value = parseInt(input);
-          if (!isNaN(value)) {
-            set("value", value);
-            set("isValid", true);
-          } else {
-            set("isValid", false);
-          }
-        } catch {
+        const value = parseInt(input);
+        if (!isNaN(value)) {
+          set("value", value);
+          set("isValid", true);
+        } else {
           set("isValid", false);
         }
       });

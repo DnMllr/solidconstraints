@@ -1,4 +1,5 @@
-import { Direction, Position } from "../scene";
+import { Position } from "../scene";
+import { Direction } from "../scene/abstractGeometry";
 
 export enum ActionKind {
   None,

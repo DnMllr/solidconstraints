@@ -6,7 +6,8 @@ import {
   isInNoneMode,
   isInVerticalLineMode,
 } from "../controls";
-import { Direction, Kind, Position, SceneReader } from "../scene";
+import { Position, SceneReader } from "../scene";
+import { Direction, Kind } from "../scene/abstractGeometry";
 import {
   firstHorizontalLine,
   firstPoint,
