@@ -21,7 +21,7 @@ export const onMouseEnter = (
   currentAction: Action,
   scene: SceneReader,
   controls: ControlsState,
-  e: MouseEvent
+  e: Pick<MouseEvent, "offsetX" | "offsetY">
 ): Action =>
   computeEnterAction(
     currentAction,

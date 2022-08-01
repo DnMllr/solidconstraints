@@ -54,7 +54,7 @@ export interface SceneWriter {
 
 export type SceneCtl = SceneReader & SceneWriter;
 
-const createSceneReader = (
+export const createSceneReader = (
   scene: ReturnType<typeof createStore<BaseScene>>[0]
 ): SceneReader => {
   const xLines = createMemo(() => createXLines(scene));

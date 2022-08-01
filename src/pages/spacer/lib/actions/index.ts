@@ -1,5 +1,5 @@
 import { Position } from "../scene";
-import { Direction } from "../scene/abstractGeometry";
+import { Direction, Kind } from "../scene/abstractGeometry";
 
 export enum ActionKind {
   None,
@@ -290,6 +290,65 @@ export const selectedElements = (action: Action): string[] => {
 
 export const draggedElements = (action: Action): string[] => {
   return collectByActionKey("dragged", action);
+};
+
+interface ElementCollection {
+  [Kind.Line]: Set<string>;
+  [Kind.Point]: Set<string>;
+  unknown: Set<string>;
+}
+
+export const allReferencedElementsByKind = (
+  action: Action
+): ElementCollection => {
+  const result: ElementCollection = {
+    [Kind.Point]: new Set(),
+    [Kind.Line]: new Set(),
+    unknown: new Set(),
+  };
+
+  if ("hovered" in action) {
+    if (typeof action.hovered !== "string") {
+      collectFromActivity(action.hovered, result);
+    } else {
+      result.unknown.add(action.hovered);
+    }
+  }
+
+  if ("dragged" in action) {
+    collectFromActivity(action.dragged, result);
+  }
+
+  if ("selected" in action) {
+    collectFromActivity(action.selected, result);
+  }
+
+  return result;
+};
+
+const collectFromActivity = (
+  a: HasLine | HasLines | HasPoint | HasPoints,
+  collect: { [key in Kind]: Set<string> }
+) => {
+  if ("line" in a) {
+    collect[Kind.Line].add(a.line);
+  }
+
+  if ("lines" in a) {
+    for (const line of a.lines) {
+      collect[Kind.Line].add(line);
+    }
+  }
+
+  if ("point" in a) {
+    collect[Kind.Point].add(a.point);
+  }
+
+  if ("points" in a) {
+    for (const point of a.points) {
+      collect[Kind.Point].add(point);
+    }
+  }
 };
 
 export const isReferencedByAction = (id: string, action: Action): boolean => {

@@ -8,8 +8,8 @@ import { onMouseEnter } from "./onMouseEnter";
 import { onMouseLeave } from "./onMouseLeave";
 import { onMouseMove } from "./onMouseMove";
 import { onMouseUp } from "./onMouseUp";
-import { onUIHoverElement } from "./onUIClear";
-import { onUIClear } from "./onUIHover";
+import { onUIHoverElement } from "./onUIHover";
+import { onUIClear } from "./onUIClear";
 
 export interface InteractionCtrl {
   action(): Action;

@@ -39,8 +39,8 @@ export const createControls = (): ControlsCtrl => {
   return {
     controls,
     setGrid(x: number, y: number) {
-      if (x < 0 || y < 0) {
-        throw new Error("grid values must be positive");
+      if (x <= 0 || y <= 0) {
+        throw new Error("grid values must be a positive non zero number");
       }
 
       setControls("grid", { x, y });

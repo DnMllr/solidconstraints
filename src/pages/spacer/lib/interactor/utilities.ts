@@ -4,7 +4,7 @@ import { Position } from "../scene";
 //TODO(Dan) rename to apply grid to event
 export const computePosition = (
   controls: ControlsState,
-  e: MouseEvent
+  e: Pick<MouseEvent, "offsetX" | "offsetY">
 ): Position => {
   let x = e.offsetX;
   let y = e.offsetY;
