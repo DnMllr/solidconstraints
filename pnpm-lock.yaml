@@ -5,6 +5,7 @@ specifiers:
   "@hope-ui/solid": ^0.6.2
   "@solid-primitives/bounds": ^0.0.100
   "@stitches/core": ^1.2.8
+  "@thi.ng/dual-algebra": ^0.4.9
   "@typescript-eslint/eslint-plugin": ^5.31.0
   "@typescript-eslint/parser": ^5.31.0
   autoprefixer: ^10.4.7
@@ -14,8 +15,10 @@ specifiers:
   fast-check: ^3.1.1
   jsdom: ^20.0.0
   nanoid: ^4.0.0
+  nlopt-js: ^0.1.1
   postcss: ^8.4.14
   roughjs: ^4.5.2
+  simplegrad: ^1.0.0
   solid-dom-testing: ^0.0.3
   solid-js: ^1.4.7
   solid-register: ^0.2.5
@@ -26,18 +29,19 @@ specifiers:
   vite: ^3.0.0
   vite-plugin-solid: ^2.3.0
   vitest: ^0.20.2
-  z3-solver: ^4.10.1
 
 dependencies:
   "@flatten-js/core": 1.3.4
   "@hope-ui/solid": 0.6.2_slkpy7skjkboaqc6cgdqhbjk4i
   "@solid-primitives/bounds": 0.0.100_solid-js@1.4.7
   "@stitches/core": 1.2.8
+  "@thi.ng/dual-algebra": 0.4.9
   nanoid: 4.0.0
+  nlopt-js: 0.1.1
   roughjs: 4.5.2
+  simplegrad: 1.0.0
   solid-js: 1.4.7
   solid-transition-group: 0.0.10_solid-js@1.4.7
-  z3-solver: 4.10.1
 
 devDependencies:
   "@typescript-eslint/eslint-plugin": 5.31.0_d5zwcxr4bwkhmuo464cb3a2puu
@@ -790,6 +794,24 @@ packages:
       pretty-format: 26.6.2
     dev: true
 
+  /@thi.ng/api/8.3.9:
+    resolution:
+      {
+        integrity: sha512-HWtR/ASHht45HYUEheGMb8scX4mrnITFvDlYaGZG+EPLNfQO1UXPdBeVZYFlGqnZDWi17kFyEV6XmnawyXAr0g==,
+      }
+    engines: { node: ">=12.7" }
+    dev: false
+
+  /@thi.ng/dual-algebra/0.4.9:
+    resolution:
+      {
+        integrity: sha512-RUbnga9t/fpFP+OHyCzrVwmuSTqFX83r19/xb1ESQ1WdUmbc4z/xQnIIuEfX/LjX9H0pAMjuUoL8FAsuR9l2VQ==,
+      }
+    engines: { node: ">=12.7" }
+    dependencies:
+      "@thi.ng/api": 8.3.9
+    dev: false
+
   /@tootallnate/once/2.0.0:
     resolution:
       {
@@ -1193,15 +1215,6 @@ packages:
         integrity: sha512-jgsaNduz+ndvGyFt3uSuWqvy4lCnIJiovtouQN5JZHOKCS2QuhEdbcQHFhVksz2N2U9hXJo8odG7ETyWlEeuDw==,
       }
     dev: true
-
-  /async-mutex/0.3.2:
-    resolution:
-      {
-        integrity: sha512-HuTK7E7MT7jZEh1P9GtRW9+aTWiDWWi9InbZ5hjxrnRa39KS4BW04+xLBhYNS2aXhHUIKZSw3gj4Pn1pj+qGAA==,
-      }
-    dependencies:
-      tslib: 2.4.0
-    dev: false
 
   /asynckit/0.4.0:
     resolution:
@@ -2476,6 +2489,13 @@ packages:
       function-bind: 1.1.1
     dev: true
 
+  /hashmap/2.4.0:
+    resolution:
+      {
+        integrity: sha512-Ngj48lhnxJdnBAEVbubKBJuN1elfVLZJs94ZixRi98X3GCU4v6pgj9qRkHt6H8WaVJ69Wv0r1GhtS7hvF9zCgg==,
+      }
+    dev: false
+
   /html-encoding-sniffer/3.0.0:
     resolution:
       {
@@ -2967,6 +2987,15 @@ packages:
         integrity: sha512-OWND8ei3VtNC9h7V60qff3SVobHr996CTwgxubgyQYEpg290h9J0buyECNNJexkFm5sOajh5G116RYA1c8ZMSw==,
       }
     dev: true
+
+  /nlopt-js/0.1.1:
+    resolution:
+      {
+        integrity: sha512-WhTbQelM5zxM3epyZayfCh9722TDInOMcbcTFbnFiHNx8/JqfGKrPhFqnZNylIPUjA6PfBM/zQqLzSvXO9YHkw==,
+      }
+    dependencies:
+      hashmap: 2.4.0
+    dev: false
 
   /node-releases/2.0.6:
     resolution:
@@ -3527,6 +3556,13 @@ packages:
       }
     dev: true
 
+  /simplegrad/1.0.0:
+    resolution:
+      {
+        integrity: sha512-ajjA5CNOh91xuseIylcWwudLUslqDJ8zi0vyZpzSaF+5JNCIgqf2IDEPkZF0NgJqmfkhQcHcQFhTbBqTopJ4DQ==,
+      }
+    dev: false
+
   /slash/3.0.0:
     resolution:
       {
@@ -3842,13 +3878,6 @@ packages:
         integrity: sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==,
       }
     dev: true
-
-  /tslib/2.4.0:
-    resolution:
-      {
-        integrity: sha512-d6xOpEDfsi2CZVlPQzGeux8XMwLT9hssAsaPYExaQMuYskwb+x1x7J371tWlbBdWHroy99KnVB6qIkUbs5X3UQ==,
-      }
-    dev: false
 
   /tsutils/3.21.0_typescript@4.7.4:
     resolution:
@@ -4249,13 +4278,3 @@ packages:
       }
     engines: { node: ">=10" }
     dev: true
-
-  /z3-solver/4.10.1:
-    resolution:
-      {
-        integrity: sha512-o86C9U70p7SOdY4A63e61b5DkZWQiQ6CD35b/bcOfeQD+5CSh4Bu+kBp9J9VoV1IOxf5xCMfYq1Gow2MQdn6mg==,
-      }
-    engines: { node: ">=16" }
-    dependencies:
-      async-mutex: 0.3.2
-    dev: false

@@ -9,7 +9,7 @@ import { createScene } from "./lib/scene";
 export const Spacer: Component = () => {
   const scene = createScene();
   const controls = createControls();
-  const interactor = createInteractor(scene, controls);
+  const interactor = createInteractor(scene, controls.controls);
 
   return (
     <VStack class="w-full h-full absolute" alignItems="flex-start">

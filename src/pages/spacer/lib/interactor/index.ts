@@ -1,6 +1,6 @@
 import { createSignal } from "solid-js";
 import { Action, ActionKind, lookupActionKind } from "../actions";
-import { ControlsCtrl } from "../controls";
+import { ControlsState } from "../controls";
 import { SceneReader } from "../scene";
 import { onEscape } from "./onEscapeKey";
 import { onMouseDown } from "./onMouseDown";
@@ -38,7 +38,7 @@ export interface UIInteractions {
 
 export const createInteractor = (
   scene: SceneReader,
-  controls: ControlsCtrl
+  controls: ControlsState
 ): InteractionCtrl => {
   const [action, setAction] = createSignal<Action>({ kind: ActionKind.None });
 
@@ -56,15 +56,15 @@ export const createInteractor = (
       },
 
       onMouseUp(e: MouseEvent) {
-        return setAction((a) => onMouseUp(a, scene, controls.controls, e));
+        return setAction((a) => onMouseUp(a, scene, controls, e));
       },
 
       onMouseMove(e: MouseEvent) {
-        return setAction((a) => onMouseMove(a, scene, controls.controls, e));
+        return setAction((a) => onMouseMove(a, scene, controls, e));
       },
 
       onMouseEnter(e: MouseEvent) {
-        return setAction((a) => onMouseEnter(a, scene, controls.controls, e));
+        return setAction((a) => onMouseEnter(a, scene, controls, e));
       },
 
       onMouseLeave() {
@@ -74,7 +74,7 @@ export const createInteractor = (
 
     keyboard: {
       onEscape() {
-        return setAction((a) => onEscape(a, scene, controls.controls));
+        return setAction((a) => onEscape(a, scene, controls));
       },
     },
 
